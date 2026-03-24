@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Salon Rochii Mireasă – Evidență Clienți</title>
+  <style>
+    /* ── Reset & Variables ─────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --rose:    #c9768f;
+      --rose-lt: #f5dde5;
+      --rose-dk: #a85570;
+      --gold:    #c9a84c;
+      --gold-lt: #f5ecd4;
+      --white:   #fff;
+      --gray-1:  #faf7f8;
+      --gray-2:  #f0eaec;
+      --gray-3:  #d9cdd1;
+      --gray-4:  #9e8e94;
+      --dark:    #3d2b32;
+      --text:    #4a3840;
+      --shadow:  0 2px 12px rgba(100,40,60,.10);
+      --radius:  12px;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--gray-1);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Sidebar ───────────────────────────────────────── */
+    #app { display: flex; min-height: 100vh; }
+
+    .sidebar {
+      width: 230px;
+      background: var(--dark);
+      color: #f0e0e6;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 100;
+    }
+
+    .sidebar-brand {
+      padding: 24px 20px 16px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .sidebar-brand h1 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--gold);
+      letter-spacing: .5px;
+    }
+    .sidebar-brand p { font-size: .73rem; color: var(--gray-4); margin-top: 2px; }
+
+    nav { flex: 1; padding: 12px 0; }
+    nav a {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 20px;
+      font-size: .88rem;
+      color: #d0b8be;
+      text-decoration: none;
+      border-left: 3px solid transparent;
+      transition: all .15s;
+      cursor: pointer;
+    }
+    nav a:hover { background: rgba(255,255,255,.06); color: #fff; }
+    nav a.active { background: rgba(201,118,143,.15); color: var(--rose); border-left-color: var(--rose); }
+    nav a .ico { font-size: 1.1rem; width: 20px; text-align: center; }
+
+    /* ── Main ──────────────────────────────────────────── */
+    .main { margin-left: 230px; flex: 1; padding: 28px 32px; }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ── Page header ───────────────────────────────────── */
+    .page-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .page-header h2 { font-size: 1.5rem; color: var(--dark); }
+    .page-header p  { font-size: .85rem; color: var(--gray-4); margin-top: 2px; }
+
+    /* ── Buttons ───────────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 18px; border-radius: 8px; border: none;
+      font-size: .85rem; font-weight: 600; cursor: pointer;
+      transition: all .15s;
+    }
+    .btn-primary   { background: var(--rose); color: #fff; }
+    .btn-primary:hover { background: var(--rose-dk); }
+    .btn-outline   { background: transparent; color: var(--rose); border: 1.5px solid var(--rose); }
+    .btn-outline:hover { background: var(--rose-lt); }
+    .btn-sm        { padding: 5px 12px; font-size: .78rem; }
+    .btn-danger    { background: #e05555; color: #fff; }
+    .btn-danger:hover { background: #c44; }
+    .btn-gold      { background: var(--gold); color: #fff; }
+    .btn-gold:hover{ background: #b08a38; }
+
+    /* ── Stats cards ───────────────────────────────────── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .stat-card .label { font-size: .77rem; color: var(--gray-4); text-transform: uppercase; letter-spacing: .5px; }
+    .stat-card .value { font-size: 2rem; font-weight: 700; color: var(--dark); }
+    .stat-card .sub   { font-size: .78rem; color: var(--rose); }
+    .stat-icon { font-size: 1.6rem; margin-bottom: 4px; }
+
+    /* ── Cards ─────────────────────────────────────────── */
+    .card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--gray-2);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card-header h3 { font-size: 1rem; color: var(--dark); }
+    .card-body { padding: 20px; }
+
+    /* ── Search bar ────────────────────────────────────── */
+    .search-bar {
+      display: flex; gap: 10px;
+      margin-bottom: 18px;
+    }
+    .search-bar input {
+      flex: 1; padding: 9px 14px;
+      border: 1.5px solid var(--gray-3);
+      border-radius: 8px; font-size: .88rem;
+      outline: none; background: var(--white);
+      color: var(--text);
+      transition: border .15s;
+    }
+    .search-bar input:focus { border-color: var(--rose); }
+    .search-bar select {
+      padding: 9px 12px;
+      border: 1.5px solid var(--gray-3);
+      border-radius: 8px; font-size: .85rem;
+      background: var(--white); color: var(--text);
+      cursor: pointer; outline: none;
+    }
+    .search-bar select:focus { border-color: var(--rose); }
+
+    /* ── Table ─────────────────────────────────────────── */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    th {
+      background: var(--gray-2);
+      padding: 10px 14px;
+      text-align: left;
+      font-size: .75rem;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      color: var(--gray-4);
+      white-space: nowrap;
+    }
+    td { padding: 11px 14px; border-bottom: 1px solid var(--gray-2); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--gray-1); }
+
+    /* ── Badges ────────────────────────────────────────── */
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: .72rem;
+      font-weight: 600;
+    }
+    .badge-green  { background: #d4f0e0; color: #1e7c45; }
+    .badge-yellow { background: #fff3cc; color: #9a7300; }
+    .badge-red    { background: #fde0e0; color: #c0392b; }
+    .badge-blue   { background: #ddeeff; color: #1a5fa8; }
+    .badge-pink   { background: var(--rose-lt); color: var(--rose-dk); }
+    .badge-gray   { background: var(--gray-2); color: var(--gray-4); }
+
+    /* ── Modal ─────────────────────────────────────────── */
+    .modal-bg {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(30,10,20,.45);
+      z-index: 200;
+      align-items: center; justify-content: center;
+    }
+    .modal-bg.open { display: flex; }
+    .modal {
+      background: var(--white);
+      border-radius: 16px;
+      width: 100%; max-width: 560px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 40px rgba(60,10,30,.22);
+      animation: fadeUp .2s ease;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .modal-header {
+      padding: 20px 24px 14px;
+      border-bottom: 1px solid var(--gray-2);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .modal-header h3 { font-size: 1.05rem; color: var(--dark); }
+    .modal-close {
+      background: none; border: none; font-size: 1.4rem;
+      color: var(--gray-4); cursor: pointer; line-height: 1;
+    }
+    .modal-close:hover { color: var(--dark); }
+    .modal-body  { padding: 20px 24px; }
+    .modal-footer {
+      padding: 14px 24px 20px;
+      display: flex; gap: 10px; justify-content: flex-end;
+      border-top: 1px solid var(--gray-2);
+    }
+
+    /* ── Form ──────────────────────────────────────────── */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-grid .full { grid-column: 1 / -1; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group label { font-size: .8rem; font-weight: 600; color: var(--dark); }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      padding: 9px 12px;
+      border: 1.5px solid var(--gray-3);
+      border-radius: 8px;
+      font-size: .87rem;
+      color: var(--text);
+      background: var(--white);
+      outline: none;
+      transition: border .15s;
+      font-family: inherit;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus { border-color: var(--rose); }
+    .form-group textarea { resize: vertical; min-height: 70px; }
+
+    /* ── Dashboard recent ──────────────────────────────── */
+    .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .upcoming-list { list-style: none; }
+    .upcoming-list li {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--gray-2);
+    }
+    .upcoming-list li:last-child { border-bottom: none; }
+    .evt-date {
+      background: var(--rose-lt);
+      color: var(--rose-dk);
+      border-radius: 8px;
+      padding: 6px 10px;
+      text-align: center;
+      min-width: 48px;
+      font-size: .75rem;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+    .evt-info .name { font-size: .88rem; font-weight: 600; color: var(--dark); }
+    .evt-info .sub  { font-size: .78rem; color: var(--gray-4); }
+
+    /* ── Tabs ──────────────────────────────────────────── */
+    .tabs { display: flex; gap: 0; border-bottom: 2px solid var(--gray-2); margin-bottom: 20px; }
+    .tab {
+      padding: 9px 18px; font-size: .85rem; font-weight: 600;
+      color: var(--gray-4); cursor: pointer; border-bottom: 2px solid transparent;
+      margin-bottom: -2px; transition: all .15s;
+    }
+    .tab.active { color: var(--rose); border-bottom-color: var(--rose); }
+    .tab:hover  { color: var(--dark); }
+
+    /* ── Progress bar ──────────────────────────────────── */
+    .progress { background: var(--gray-2); border-radius: 20px; height: 6px; overflow: hidden; }
+    .progress-bar { background: var(--rose); height: 100%; border-radius: 20px; transition: width .4s; }
+
+    /* ── Client detail ─────────────────────────────────── */
+    .detail-section { margin-bottom: 20px; }
+    .detail-section h4 {
+      font-size: .8rem; text-transform: uppercase; letter-spacing: .5px;
+      color: var(--gray-4); margin-bottom: 10px;
+    }
+    .detail-row { display: flex; gap: 8px; margin-bottom: 6px; font-size: .87rem; }
+    .detail-row .lbl { color: var(--gray-4); min-width: 130px; }
+    .detail-row .val { color: var(--dark); font-weight: 500; }
+
+    .empty-state {
+      text-align: center; padding: 48px 20px;
+      color: var(--gray-4);
+    }
+    .empty-state .ico { font-size: 3rem; margin-bottom: 12px; }
+    .empty-state p { font-size: .9rem; }
+
+    /* ── Responsive ────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .sidebar { width: 60px; }
+      .sidebar-brand, nav a span { display: none; }
+      .main { margin-left: 60px; padding: 16px; }
+      .dash-grid { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-grid .full { grid-column: 1; }
+    }
+    @media (max-width: 600px) {
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <h1>💍 BridalManager</h1>
+      <p>Salon rochii de mireasă</p>
+    </div>
+    <nav>
+      <a class="active" onclick="showPage('dashboard')">
+        <span class="ico">🏠</span><span>Dashboard</span>
+      </a>
+      <a onclick="showPage('clienti')">
+        <span class="ico">👤</span><span>Clienți</span>
+      </a>
+      <a onclick="showPage('comenzi')">
+        <span class="ico">👗</span><span>Comenzi / Rochii</span>
+      </a>
+      <a onclick="showPage('programari')">
+        <span class="ico">📅</span><span>Programări</span>
+      </a>
+      <a onclick="showPage('plati')">
+        <span class="ico">💰</span><span>Plăți</span>
+      </a>
+    </nav>
+  </aside>
+
+  <!-- ── Main ── -->
+  <main class="main">
+
+    <!-- ══ DASHBOARD ══ -->
+    <div id="page-dashboard" class="page active">
+      <div class="page-header">
+        <div>
+          <h2>Dashboard</h2>
+          <p id="dash-date"></p>
+        </div>
+      </div>
+
+      <div class="stats-grid" id="stats-grid"></div>
+
+      <div class="dash-grid">
+        <div class="card">
+          <div class="card-header"><h3>📅 Programări viitoare</h3></div>
+          <div class="card-body" id="dash-programari"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>👗 Comenzi recente</h3></div>
+          <div class="card-body" id="dash-comenzi"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ CLIENȚI ══ -->
+    <div id="page-clienti" class="page">
+      <div class="page-header">
+        <div><h2>Clienți</h2><p>Gestionează baza de date cu clienți</p></div>
+        <button class="btn btn-primary" onclick="openModal('client')">+ Adaugă client</button>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <div class="search-bar">
+            <input type="text" id="search-clienti" placeholder="Caută după nume, telefon, email…" oninput="renderClienti()">
+            <select id="filter-clienti" onchange="renderClienti()">
+              <option value="">Toți clienții</option>
+              <option value="activ">Activi</option>
+              <option value="finalizat">Finalizați</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Nume</th>
+                  <th>Telefon</th>
+                  <th>Email</th>
+                  <th>Data nunții</th>
+                  <th>Status</th>
+                  <th>Acțiuni</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-clienti"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ COMENZI ══ -->
+    <div id="page-comenzi" class="page">
+      <div class="page-header">
+        <div><h2>Comenzi / Rochii</h2><p>Urmărirea statusului rochiilor</p></div>
+        <button class="btn btn-primary" onclick="openModal('comanda')">+ Adaugă comandă</button>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <div class="search-bar">
+            <input type="text" id="search-comenzi" placeholder="Caută după client, model…" oninput="renderComenzi()">
+            <select id="filter-comenzi" onchange="renderComenzi()">
+              <option value="">Toate statusurile</option>
+              <option value="masura">La măsură</option>
+              <option value="productie">În producție</option>
+              <option value="proba">Probă</option>
+              <option value="modificari">Modificări</option>
+              <option value="gata">Gata</option>
+              <option value="livrata">Livrată</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Client</th>
+                  <th>Model rochie</th>
+                  <th>Termen livrare</th>
+                  <th>Preț</th>
+                  <th>Status</th>
+                  <th>Acțiuni</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-comenzi"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PROGRAMĂRI ══ -->
+    <div id="page-programari" class="page">
+      <div class="page-header">
+        <div><h2>Programări</h2><p>Calendar și evidență întâlniri</p></div>
+        <button class="btn btn-primary" onclick="openModal('programare')">+ Adaugă programare</button>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <div class="search-bar">
+            <input type="text" id="search-prog" placeholder="Caută după client sau tip…" oninput="renderProgramari()">
+            <select id="filter-prog" onchange="renderProgramari()">
+              <option value="">Toate</option>
+              <option value="consultatie">Consultație</option>
+              <option value="proba">Probă rochie</option>
+              <option value="modificari">Modificări</option>
+              <option value="ridicare">Ridicare rochie</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Client</th>
+                  <th>Data</th>
+                  <th>Ora</th>
+                  <th>Tip</th>
+                  <th>Note</th>
+                  <th>Acțiuni</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-prog"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PLĂȚI ══ -->
+    <div id="page-plati" class="page">
+      <div class="page-header">
+        <div><h2>Plăți</h2><p>Evidența avansurilor și plăților</p></div>
+        <button class="btn btn-primary" onclick="openModal('plata')">+ Înregistrează plată</button>
+      </div>
+      <div class="stats-grid" id="stats-plati"></div>
+      <div class="card">
+        <div class="card-body">
+          <div class="search-bar">
+            <input type="text" id="search-plati" placeholder="Caută după client…" oninput="renderPlati()">
+            <select id="filter-plati" onchange="renderPlati()">
+              <option value="">Toate</option>
+              <option value="avans">Avans</option>
+              <option value="rata">Rată</option>
+              <option value="final">Plată finală</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Client</th>
+                  <th>Tip plată</th>
+                  <th>Sumă (RON)</th>
+                  <th>Data</th>
+                  <th>Metodă</th>
+                  <th>Note</th>
+                  <th>Acțiuni</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-plati"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ══════════════ MODALS ══════════════ -->
+
+<!-- Modal: Client -->
+<div class="modal-bg" id="modal-client">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-client-title">Adaugă client</h3>
+      <button class="modal-close" onclick="closeModal('client')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Prenume *</label>
+          <input type="text" id="c-prenume" placeholder="Maria">
+        </div>
+        <div class="form-group">
+          <label>Nume *</label>
+          <input type="text" id="c-nume" placeholder="Ionescu">
+        </div>
+        <div class="form-group">
+          <label>Telefon *</label>
+          <input type="tel" id="c-telefon" placeholder="07xx xxx xxx">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="c-email" placeholder="maria@email.ro">
+        </div>
+        <div class="form-group">
+          <label>Data nunții</label>
+          <input type="date" id="c-nunta">
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="c-status">
+            <option value="activ">Activ</option>
+            <option value="finalizat">Finalizat</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Bust (cm)</label>
+          <input type="number" id="c-bust" placeholder="92">
+        </div>
+        <div class="form-group">
+          <label>Talie (cm)</label>
+          <input type="number" id="c-talie" placeholder="72">
+        </div>
+        <div class="form-group">
+          <label>Șolduri (cm)</label>
+          <input type="number" id="c-solduri" placeholder="98">
+        </div>
+        <div class="form-group">
+          <label>Înălțime (cm)</label>
+          <input type="number" id="c-inaltime" placeholder="165">
+        </div>
+        <div class="form-group full">
+          <label>Note</label>
+          <textarea id="c-note" placeholder="Observații, preferințe, alergii la materiale…"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('client')">Anulează</button>
+      <button class="btn btn-primary" onclick="saveClient()">Salvează</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Comandă -->
+<div class="modal-bg" id="modal-comanda">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-comanda-title">Adaugă comandă</h3>
+      <button class="modal-close" onclick="closeModal('comanda')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Client *</label>
+          <select id="cmd-client"></select>
+        </div>
+        <div class="form-group">
+          <label>Model rochie *</label>
+          <input type="text" id="cmd-model" placeholder="Princess A-line">
+        </div>
+        <div class="form-group">
+          <label>Culoare</label>
+          <input type="text" id="cmd-culoare" placeholder="Ivory, Alb, Champagne…">
+        </div>
+        <div class="form-group">
+          <label>Termen livrare *</label>
+          <input type="date" id="cmd-termen">
+        </div>
+        <div class="form-group">
+          <label>Preț total (RON) *</label>
+          <input type="number" id="cmd-pret" placeholder="5000">
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="cmd-status">
+            <option value="masura">La măsură</option>
+            <option value="productie">În producție</option>
+            <option value="proba">Probă</option>
+            <option value="modificari">Modificări</option>
+            <option value="gata">Gata</option>
+            <option value="livrata">Livrată</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Descriere / Modificări cerute</label>
+          <textarea id="cmd-desc" placeholder="Dantelă pe corsaj, trenă 2m, închidere corset…"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('comanda')">Anulează</button>
+      <button class="btn btn-primary" onclick="saveComanda()">Salvează</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Programare -->
+<div class="modal-bg" id="modal-programare">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-prog-title">Adaugă programare</h3>
+      <button class="modal-close" onclick="closeModal('programare')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Client *</label>
+          <select id="prog-client"></select>
+        </div>
+        <div class="form-group">
+          <label>Data *</label>
+          <input type="date" id="prog-data">
+        </div>
+        <div class="form-group">
+          <label>Ora *</label>
+          <input type="time" id="prog-ora">
+        </div>
+        <div class="form-group full">
+          <label>Tip programare *</label>
+          <select id="prog-tip">
+            <option value="consultatie">Consultație</option>
+            <option value="proba">Probă rochie</option>
+            <option value="modificari">Modificări</option>
+            <option value="ridicare">Ridicare rochie</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Note</label>
+          <textarea id="prog-note" placeholder="Detalii…"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('programare')">Anulează</button>
+      <button class="btn btn-primary" onclick="saveProgramare()">Salvează</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Plată -->
+<div class="modal-bg" id="modal-plata">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-plata-title">Înregistrează plată</h3>
+      <button class="modal-close" onclick="closeModal('plata')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Client *</label>
+          <select id="pl-client"></select>
+        </div>
+        <div class="form-group">
+          <label>Tip plată *</label>
+          <select id="pl-tip">
+            <option value="avans">Avans</option>
+            <option value="rata">Rată</option>
+            <option value="final">Plată finală</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Sumă (RON) *</label>
+          <input type="number" id="pl-suma" placeholder="1000">
+        </div>
+        <div class="form-group">
+          <label>Data *</label>
+          <input type="date" id="pl-data">
+        </div>
+        <div class="form-group">
+          <label>Metodă plată</label>
+          <select id="pl-metoda">
+            <option value="cash">Cash</option>
+            <option value="card">Card</option>
+            <option value="transfer">Transfer bancar</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Note</label>
+          <textarea id="pl-note" placeholder="Chitanță nr…"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('plata')">Anulează</button>
+      <button class="btn btn-primary" onclick="savePlata()">Salvează</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: View Client -->
+<div class="modal-bg" id="modal-view-client">
+  <div class="modal" style="max-width:620px">
+    <div class="modal-header">
+      <h3 id="vc-title">Detalii client</h3>
+      <button class="modal-close" onclick="closeModal('view-client')">×</button>
+    </div>
+    <div class="modal-body" id="vc-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('view-client')">Închide</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Data store ──────────────────────────────────────────
+let DB = {
+  clienti: [],
+  comenzi: [],
+  programari: [],
+  plati: []
+};
+
+let editId = { client: null, comanda: null, programare: null, plata: null };
+
+// ── Persistence ─────────────────────────────────────────
+function save() { localStorage.setItem('bridal_db', JSON.stringify(DB)); }
+function load() {
+  const d = localStorage.getItem('bridal_db');
+  if (d) DB = JSON.parse(d);
+  else seedData();
+}
+
+function seedData() {
+  DB.clienti = [
+    { id: 1, prenume:'Ioana', nume:'Popa', telefon:'0721 345 678', email:'ioana.popa@gmail.com', nunta:'2025-09-14', status:'activ', bust:88, talie:68, solduri:94, inaltime:163, note:'Preferă stil romantic, dantelă' },
+    { id: 2, prenume:'Alexandra', nume:'Constantin', telefon:'0742 111 222', email:'alex.c@yahoo.ro', nunta:'2025-07-26', status:'activ', bust:92, talie:72, solduri:98, inaltime:168, note:'Nuntă în grădină, rochie ușoară' },
+    { id: 3, prenume:'Mihaela', nume:'Dumitrescu', telefon:'0756 888 999', email:'', nunta:'2025-06-07', status:'finalizat', bust:86, talie:65, solduri:90, inaltime:160, note:'' }
+  ];
+  DB.comenzi = [
+    { id: 1, clientId:1, model:'Princess A-line', culoare:'Ivory', termen:'2025-08-20', pret:6800, status:'proba', desc:'Trenă 1.5m, dantelă Chantilly pe corsaj' },
+    { id: 2, clientId:2, model:'Boho Chic Flowin', culoare:'Alb', termen:'2025-07-01', pret:4500, status:'gata', desc:'Spate gol, flori 3D aplicate' },
+    { id: 3, clientId:3, model:'Mermaid Classique', culoare:'Champagne', termen:'2025-05-25', pret:5200, status:'livrata', desc:'Sirenă, închidere corset' }
+  ];
+  DB.programari = [
+    { id: 1, clientId:1, data:'2025-04-10', ora:'11:00', tip:'proba', note:'Prima probă' },
+    { id: 2, clientId:2, data:'2025-04-08', ora:'14:30', tip:'modificari', note:'Ajustare talie -2cm' },
+    { id: 3, clientId:1, data:'2025-05-15', ora:'10:00', tip:'proba', note:'A doua probă după modificări' }
+  ];
+  DB.plati = [
+    { id: 1, clientId:1, tip:'avans', suma:2000, data:'2024-12-10', metoda:'cash', note:'Avans 30%' },
+    { id: 2, clientId:2, tip:'avans', suma:1500, data:'2024-11-20', metoda:'card', note:'' },
+    { id: 3, clientId:3, tip:'final', suma:5200, data:'2025-05-24', metoda:'transfer', note:'Achitat integral' }
+  ];
+  save();
+}
+
+function nextId(arr) { return arr.length ? Math.max(...arr.map(x=>x.id)) + 1 : 1; }
+
+// ── Navigation ───────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('nav a').forEach(a => {
+    if (a.getAttribute('onclick') && a.getAttribute('onclick').includes(name)) a.classList.add('active');
+  });
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'clienti')   renderClienti();
+  if (name === 'comenzi')   renderComenzi();
+  if (name === 'programari') renderProgramari();
+  if (name === 'plati')     renderPlati();
+}
+
+// ── Helpers ──────────────────────────────────────────────
+function clientName(id) {
+  const c = DB.clienti.find(x => x.id === id);
+  return c ? `${c.prenume} ${c.nume}` : '—';
+}
+function fmtDate(d) {
+  if (!d) return '—';
+  const [y,m,z] = d.split('-');
+  return `${z}.${m}.${y}`;
+}
+function fmtMoney(n) {
+  return Number(n).toLocaleString('ro-RO') + ' RON';
+}
+
+const STATUS_COMANDA = {
+  masura:     { label:'La măsură',    cls:'badge-blue'   },
+  productie:  { label:'În producție', cls:'badge-yellow' },
+  proba:      { label:'Probă',        cls:'badge-pink'   },
+  modificari: { label:'Modificări',   cls:'badge-yellow' },
+  gata:       { label:'Gata',         cls:'badge-green'  },
+  livrata:    { label:'Livrată',      cls:'badge-gray'   }
+};
+const TIP_PROG = {
+  consultatie: 'Consultație',
+  proba:       'Probă rochie',
+  modificari:  'Modificări',
+  ridicare:    'Ridicare rochie'
+};
+
+function badge(text, cls) { return `<span class="badge ${cls}">${text}</span>`; }
+
+// ── Dashboard ────────────────────────────────────────────
+function renderDashboard() {
+  document.getElementById('dash-date').textContent =
+    new Date().toLocaleDateString('ro-RO', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+  const totalClienti   = DB.clienti.length;
+  const comenziActive  = DB.comenzi.filter(c => c.status !== 'livrata').length;
+  const incasari       = DB.plati.reduce((s,p) => s + Number(p.suma), 0);
+  const today = new Date().toISOString().slice(0,10);
+  const progViitoare   = DB.programari.filter(p => p.data >= today).length;
+
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-icon">👤</div>
+      <div class="label">Total clienți</div>
+      <div class="value">${totalClienti}</div>
+      <div class="sub">${DB.clienti.filter(c=>c.status==='activ').length} activi</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">👗</div>
+      <div class="label">Comenzi active</div>
+      <div class="value">${comenziActive}</div>
+      <div class="sub">din ${DB.comenzi.length} total</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📅</div>
+      <div class="label">Programări viitoare</div>
+      <div class="value">${progViitoare}</div>
+      <div class="sub">programate</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">💰</div>
+      <div class="label">Total încasări</div>
+      <div class="value" style="font-size:1.4rem">${fmtMoney(incasari)}</div>
+      <div class="sub">${DB.plati.length} tranzacții</div>
+    </div>
+  `;
+
+  // Upcoming appointments
+  const upcoming = DB.programari
+    .filter(p => p.data >= today)
+    .sort((a,b) => (a.data+a.ora).localeCompare(b.data+b.ora))
+    .slice(0, 5);
+
+  if (upcoming.length === 0) {
+    document.getElementById('dash-programari').innerHTML =
+      '<div class="empty-state"><div class="ico">📅</div><p>Nicio programare viitoare</p></div>';
+  } else {
+    document.getElementById('dash-programari').innerHTML =
+      '<ul class="upcoming-list">' +
+      upcoming.map(p => {
+        const [y,m,z] = p.data.split('-');
+        return `<li>
+          <div class="evt-date">${z}<br/>${m}.${y}</div>
+          <div class="evt-info">
+            <div class="name">${clientName(p.clientId)}</div>
+            <div class="sub">${TIP_PROG[p.tip] || p.tip} • ${p.ora}</div>
+          </div>
+        </li>`;
+      }).join('') + '</ul>';
+  }
+
+  // Recent orders
+  const recent = [...DB.comenzi]
+    .sort((a,b) => b.id - a.id)
+    .slice(0, 5);
+
+  if (recent.length === 0) {
+    document.getElementById('dash-comenzi').innerHTML =
+      '<div class="empty-state"><div class="ico">👗</div><p>Nicio comandă</p></div>';
+  } else {
+    document.getElementById('dash-comenzi').innerHTML =
+      '<ul class="upcoming-list">' +
+      recent.map(c => {
+        const st = STATUS_COMANDA[c.status] || { label:c.status, cls:'badge-gray' };
+        return `<li>
+          <div style="flex:1">
+            <div class="name" style="font-size:.88rem;font-weight:600;color:var(--dark)">${clientName(c.clientId)}</div>
+            <div class="sub" style="font-size:.78rem;color:var(--gray-4)">${c.model}</div>
+          </div>
+          ${badge(st.label, st.cls)}
+        </li>`;
+      }).join('') + '</ul>';
+  }
+}
+
+// ── Clienți ──────────────────────────────────────────────
+function renderClienti() {
+  const q  = (document.getElementById('search-clienti').value || '').toLowerCase();
+  const st = document.getElementById('filter-clienti').value;
+  let list = DB.clienti.filter(c => {
+    const match = (`${c.prenume} ${c.nume} ${c.telefon} ${c.email}`).toLowerCase().includes(q);
+    const stOk  = !st || c.status === st;
+    return match && stOk;
+  });
+
+  const tbody = document.getElementById('tbody-clienti');
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="ico">👤</div><p>Niciun client găsit</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map((c, i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td><strong>${c.prenume} ${c.nume}</strong></td>
+      <td>${c.telefon}</td>
+      <td>${c.email || '—'}</td>
+      <td>${fmtDate(c.nunta)}</td>
+      <td>${badge(c.status==='activ'?'Activ':'Finalizat', c.status==='activ'?'badge-green':'badge-gray')}</td>
+      <td>
+        <button class="btn btn-sm btn-outline" onclick="viewClient(${c.id})">👁</button>
+        <button class="btn btn-sm btn-gold" style="margin:0 4px" onclick="editClient(${c.id})">✏️</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteItem('clienti',${c.id})">🗑</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function viewClient(id) {
+  const c = DB.clienti.find(x => x.id === id);
+  if (!c) return;
+  const comenzi = DB.comenzi.filter(x => x.clientId === id);
+  const plati   = DB.plati.filter(x => x.clientId === id);
+  const prog    = DB.programari.filter(x => x.clientId === id);
+  const totalPlata = plati.reduce((s,p) => s + Number(p.suma), 0);
+  const totalCmd   = comenzi.reduce((s,x) => s + Number(x.pret), 0);
+
+  document.getElementById('vc-title').textContent = `${c.prenume} ${c.nume}`;
+  document.getElementById('vc-body').innerHTML = `
+    <div class="detail-section">
+      <h4>Date personale</h4>
+      <div class="detail-row"><span class="lbl">Telefon</span><span class="val">${c.telefon}</span></div>
+      <div class="detail-row"><span class="lbl">Email</span><span class="val">${c.email||'—'}</span></div>
+      <div class="detail-row"><span class="lbl">Data nunții</span><span class="val">${fmtDate(c.nunta)}</span></div>
+      <div class="detail-row"><span class="lbl">Status</span><span class="val">${badge(c.status==='activ'?'Activ':'Finalizat', c.status==='activ'?'badge-green':'badge-gray')}</span></div>
+    </div>
+    <div class="detail-section">
+      <h4>Măsuri</h4>
+      <div class="detail-row"><span class="lbl">Bust / Talie / Șolduri</span><span class="val">${c.bust||'—'} / ${c.talie||'—'} / ${c.solduri||'—'} cm</span></div>
+      <div class="detail-row"><span class="lbl">Înălțime</span><span class="val">${c.inaltime||'—'} cm</span></div>
+    </div>
+    ${c.note ? `<div class="detail-section"><h4>Note</h4><p style="font-size:.87rem">${c.note}</p></div>` : ''}
+    <div class="detail-section">
+      <h4>Comenzi (${comenzi.length})</h4>
+      ${comenzi.length ? comenzi.map(x => {
+        const st = STATUS_COMANDA[x.status]||{label:x.status,cls:'badge-gray'};
+        return `<div class="detail-row"><span class="lbl">${x.model}</span><span class="val">${badge(st.label,st.cls)} · ${fmtMoney(x.pret)}</span></div>`;
+      }).join('') : '<p style="font-size:.85rem;color:var(--gray-4)">Nicio comandă</p>'}
+    </div>
+    <div class="detail-section">
+      <h4>Plăți</h4>
+      <div class="detail-row"><span class="lbl">Total comandat</span><span class="val">${fmtMoney(totalCmd)}</span></div>
+      <div class="detail-row"><span class="lbl">Total achitat</span><span class="val" style="color:var(--rose)">${fmtMoney(totalPlata)}</span></div>
+      <div class="detail-row"><span class="lbl">Rest de plată</span><span class="val">${fmtMoney(Math.max(0,totalCmd-totalPlata))}</span></div>
+      <div style="margin-top:8px"><div class="progress"><div class="progress-bar" style="width:${totalCmd?Math.min(100,totalPlata/totalCmd*100):0}%"></div></div></div>
+    </div>
+    <div class="detail-section">
+      <h4>Programări (${prog.length})</h4>
+      ${prog.length ? prog.map(p =>
+        `<div class="detail-row"><span class="lbl">${fmtDate(p.data)} ${p.ora}</span><span class="val">${TIP_PROG[p.tip]||p.tip}</span></div>`
+      ).join('') : '<p style="font-size:.85rem;color:var(--gray-4)">Nicio programare</p>'}
+    </div>
+  `;
+  document.getElementById('modal-view-client').classList.add('open');
+}
+
+// ── Comenzi ───────────────────────────────────────────────
+function renderComenzi() {
+  const q  = (document.getElementById('search-comenzi').value || '').toLowerCase();
+  const st = document.getElementById('filter-comenzi').value;
+  let list = DB.comenzi.filter(c => {
+    const name = clientName(c.clientId).toLowerCase();
+    const match = (name + c.model).toLowerCase().includes(q);
+    const stOk  = !st || c.status === st;
+    return match && stOk;
+  });
+
+  const tbody = document.getElementById('tbody-comenzi');
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="ico">👗</div><p>Nicio comandă găsită</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map((c, i) => {
+    const st = STATUS_COMANDA[c.status] || { label:c.status, cls:'badge-gray' };
+    return `
+    <tr>
+      <td>${i+1}</td>
+      <td>${clientName(c.clientId)}</td>
+      <td><strong>${c.model}</strong>${c.culoare?` <span style="color:var(--gray-4);font-size:.8rem">· ${c.culoare}</span>`:''}</td>
+      <td>${fmtDate(c.termen)}</td>
+      <td>${fmtMoney(c.pret)}</td>
+      <td>${badge(st.label, st.cls)}</td>
+      <td>
+        <button class="btn btn-sm btn-gold" onclick="editComanda(${c.id})">✏️</button>
+        <button class="btn btn-sm btn-danger" style="margin-left:4px" onclick="deleteItem('comenzi',${c.id})">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Programări ────────────────────────────────────────────
+function renderProgramari() {
+  const q  = (document.getElementById('search-prog').value || '').toLowerCase();
+  const tp = document.getElementById('filter-prog').value;
+  let list = DB.programari.filter(p => {
+    const name = clientName(p.clientId).toLowerCase();
+    const match = (name + (p.note||'')).toLowerCase().includes(q);
+    const tpOk  = !tp || p.tip === tp;
+    return match && tpOk;
+  }).sort((a,b) => (a.data+a.ora).localeCompare(b.data+b.ora));
+
+  const tbody = document.getElementById('tbody-prog');
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="ico">📅</div><p>Nicio programare</p></div></td></tr>`;
+    return;
+  }
+  const today = new Date().toISOString().slice(0,10);
+  tbody.innerHTML = list.map((p, i) => {
+    const past = p.data < today;
+    return `
+    <tr style="${past?'opacity:.6':''}">
+      <td>${i+1}</td>
+      <td>${clientName(p.clientId)}</td>
+      <td>${fmtDate(p.data)}</td>
+      <td>${p.ora}</td>
+      <td>${badge(TIP_PROG[p.tip]||p.tip, 'badge-pink')}</td>
+      <td style="font-size:.82rem;color:var(--gray-4)">${p.note||'—'}</td>
+      <td>
+        <button class="btn btn-sm btn-gold" onclick="editProgramare(${p.id})">✏️</button>
+        <button class="btn btn-sm btn-danger" style="margin-left:4px" onclick="deleteItem('programari',${p.id})">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Plăți ─────────────────────────────────────────────────
+function renderPlati() {
+  const q  = (document.getElementById('search-plati').value || '').toLowerCase();
+  const tp = document.getElementById('filter-plati').value;
+  let list = DB.plati.filter(p => {
+    const name = clientName(p.clientId).toLowerCase();
+    const match = name.includes(q);
+    const tpOk  = !tp || p.tip === tp;
+    return match && tpOk;
+  }).sort((a,b) => b.data.localeCompare(a.data));
+
+  // Stats
+  const totalIncasat = DB.plati.reduce((s,p) => s + Number(p.suma), 0);
+  const totalCmd     = DB.comenzi.reduce((s,c) => s + Number(c.pret), 0);
+  const rest         = Math.max(0, totalCmd - totalIncasat);
+  document.getElementById('stats-plati').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-icon">💵</div>
+      <div class="label">Total valoare comenzi</div>
+      <div class="value" style="font-size:1.3rem">${fmtMoney(totalCmd)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">✅</div>
+      <div class="label">Total încasat</div>
+      <div class="value" style="font-size:1.3rem;color:var(--rose)">${fmtMoney(totalIncasat)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">⏳</div>
+      <div class="label">Rest de încasat</div>
+      <div class="value" style="font-size:1.3rem">${fmtMoney(rest)}</div>
+    </div>
+  `;
+
+  const tipLabel = { avans:'Avans', rata:'Rată', final:'Plată finală' };
+  const tipCls   = { avans:'badge-blue', rata:'badge-yellow', final:'badge-green' };
+  const metodaLabel = { cash:'Cash', card:'Card', transfer:'Transfer bancar' };
+
+  const tbody = document.getElementById('tbody-plati');
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="ico">💰</div><p>Nicio plată înregistrată</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map((p, i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td>${clientName(p.clientId)}</td>
+      <td>${badge(tipLabel[p.tip]||p.tip, tipCls[p.tip]||'badge-gray')}</td>
+      <td><strong>${fmtMoney(p.suma)}</strong></td>
+      <td>${fmtDate(p.data)}</td>
+      <td>${metodaLabel[p.metoda]||p.metoda}</td>
+      <td style="font-size:.82rem;color:var(--gray-4)">${p.note||'—'}</td>
+      <td>
+        <button class="btn btn-sm btn-gold" onclick="editPlata(${p.id})">✏️</button>
+        <button class="btn btn-sm btn-danger" style="margin-left:4px" onclick="deleteItem('plati',${p.id})">🗑</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ── Modal open/close ──────────────────────────────────────
+function openModal(type) {
+  editId[type] = null;
+  if (type === 'client') {
+    document.getElementById('modal-client-title').textContent = 'Adaugă client';
+    ['prenume','nume','telefon','email','nunta','note','bust','talie','solduri','inaltime'].forEach(f => {
+      document.getElementById('c-'+f).value = '';
+    });
+    document.getElementById('c-status').value = 'activ';
+  }
+  if (type === 'comanda') {
+    document.getElementById('modal-comanda-title').textContent = 'Adaugă comandă';
+    populateSelect('cmd-client', DB.clienti, c => `${c.prenume} ${c.nume}`);
+    ['model','culoare','termen','pret','desc'].forEach(f => document.getElementById('cmd-'+f).value = '');
+    document.getElementById('cmd-status').value = 'masura';
+  }
+  if (type === 'programare') {
+    document.getElementById('modal-prog-title').textContent = 'Adaugă programare';
+    populateSelect('prog-client', DB.clienti, c => `${c.prenume} ${c.nume}`);
+    document.getElementById('prog-data').value = '';
+    document.getElementById('prog-ora').value = '';
+    document.getElementById('prog-note').value = '';
+    document.getElementById('prog-tip').value = 'consultatie';
+  }
+  if (type === 'plata') {
+    document.getElementById('modal-plata-title').textContent = 'Înregistrează plată';
+    populateSelect('pl-client', DB.clienti, c => `${c.prenume} ${c.nume}`);
+    ['suma','note'].forEach(f => document.getElementById('pl-'+f).value = '');
+    document.getElementById('pl-data').value = new Date().toISOString().slice(0,10);
+    document.getElementById('pl-tip').value = 'avans';
+    document.getElementById('pl-metoda').value = 'cash';
+  }
+  document.getElementById('modal-'+type).classList.add('open');
+}
+
+function closeModal(type) {
+  document.getElementById('modal-'+type).classList.remove('open');
+}
+
+function populateSelect(id, arr, labelFn) {
+  const sel = document.getElementById(id);
+  sel.innerHTML = arr.map(x => `<option value="${x.id}">${labelFn(x)}</option>`).join('');
+}
+
+// ── Edit helpers ──────────────────────────────────────────
+function editClient(id) {
+  const c = DB.clienti.find(x=>x.id===id);
+  if (!c) return;
+  editId.client = id;
+  document.getElementById('modal-client-title').textContent = 'Editează client';
+  document.getElementById('c-prenume').value  = c.prenume;
+  document.getElementById('c-nume').value     = c.nume;
+  document.getElementById('c-telefon').value  = c.telefon;
+  document.getElementById('c-email').value    = c.email||'';
+  document.getElementById('c-nunta').value    = c.nunta||'';
+  document.getElementById('c-status').value   = c.status;
+  document.getElementById('c-bust').value     = c.bust||'';
+  document.getElementById('c-talie').value    = c.talie||'';
+  document.getElementById('c-solduri').value  = c.solduri||'';
+  document.getElementById('c-inaltime').value = c.inaltime||'';
+  document.getElementById('c-note').value     = c.note||'';
+  document.getElementById('modal-client').classList.add('open');
+}
+
+function editComanda(id) {
+  const c = DB.comenzi.find(x=>x.id===id);
+  if (!c) return;
+  editId.comanda = id;
+  document.getElementById('modal-comanda-title').textContent = 'Editează comandă';
+  populateSelect('cmd-client', DB.clienti, x => `${x.prenume} ${x.nume}`);
+  document.getElementById('cmd-client').value  = c.clientId;
+  document.getElementById('cmd-model').value   = c.model;
+  document.getElementById('cmd-culoare').value = c.culoare||'';
+  document.getElementById('cmd-termen').value  = c.termen||'';
+  document.getElementById('cmd-pret').value    = c.pret;
+  document.getElementById('cmd-status').value  = c.status;
+  document.getElementById('cmd-desc').value    = c.desc||'';
+  document.getElementById('modal-comanda').classList.add('open');
+}
+
+function editProgramare(id) {
+  const p = DB.programari.find(x=>x.id===id);
+  if (!p) return;
+  editId.programare = id;
+  document.getElementById('modal-prog-title').textContent = 'Editează programare';
+  populateSelect('prog-client', DB.clienti, c => `${c.prenume} ${c.nume}`);
+  document.getElementById('prog-client').value = p.clientId;
+  document.getElementById('prog-data').value   = p.data;
+  document.getElementById('prog-ora').value    = p.ora;
+  document.getElementById('prog-tip').value    = p.tip;
+  document.getElementById('prog-note').value   = p.note||'';
+  document.getElementById('modal-programare').classList.add('open');
+}
+
+function editPlata(id) {
+  const p = DB.plati.find(x=>x.id===id);
+  if (!p) return;
+  editId.plata = id;
+  document.getElementById('modal-plata-title').textContent = 'Editează plată';
+  populateSelect('pl-client', DB.clienti, c => `${c.prenume} ${c.nume}`);
+  document.getElementById('pl-client').value = p.clientId;
+  document.getElementById('pl-tip').value    = p.tip;
+  document.getElementById('pl-suma').value   = p.suma;
+  document.getElementById('pl-data').value   = p.data;
+  document.getElementById('pl-metoda').value = p.metoda;
+  document.getElementById('pl-note').value   = p.note||'';
+  document.getElementById('modal-plata').classList.add('open');
+}
+
+// ── Save handlers ─────────────────────────────────────────
+function saveClient() {
+  const prenume = document.getElementById('c-prenume').value.trim();
+  const nume    = document.getElementById('c-nume').value.trim();
+  const telefon = document.getElementById('c-telefon').value.trim();
+  if (!prenume || !nume || !telefon) { alert('Câmpurile marcate cu * sunt obligatorii.'); return; }
+
+  const obj = {
+    prenume, nume, telefon,
+    email:    document.getElementById('c-email').value.trim(),
+    nunta:    document.getElementById('c-nunta').value,
+    status:   document.getElementById('c-status').value,
+    bust:     document.getElementById('c-bust').value,
+    talie:    document.getElementById('c-talie').value,
+    solduri:  document.getElementById('c-solduri').value,
+    inaltime: document.getElementById('c-inaltime').value,
+    note:     document.getElementById('c-note').value.trim()
+  };
+  if (editId.client) {
+    Object.assign(DB.clienti.find(x=>x.id===editId.client), obj);
+  } else {
+    obj.id = nextId(DB.clienti);
+    DB.clienti.push(obj);
+  }
+  save(); closeModal('client'); renderClienti();
+}
+
+function saveComanda() {
+  const clientId = Number(document.getElementById('cmd-client').value);
+  const model    = document.getElementById('cmd-model').value.trim();
+  const termen   = document.getElementById('cmd-termen').value;
+  const pret     = document.getElementById('cmd-pret').value;
+  if (!clientId || !model || !termen || !pret) { alert('Câmpurile marcate cu * sunt obligatorii.'); return; }
+
+  const obj = {
+    clientId, model,
+    culoare: document.getElementById('cmd-culoare').value.trim(),
+    termen, pret: Number(pret),
+    status: document.getElementById('cmd-status').value,
+    desc:   document.getElementById('cmd-desc').value.trim()
+  };
+  if (editId.comanda) {
+    Object.assign(DB.comenzi.find(x=>x.id===editId.comanda), obj);
+  } else {
+    obj.id = nextId(DB.comenzi);
+    DB.comenzi.push(obj);
+  }
+  save(); closeModal('comanda'); renderComenzi();
+}
+
+function saveProgramare() {
+  const clientId = Number(document.getElementById('prog-client').value);
+  const data     = document.getElementById('prog-data').value;
+  const ora      = document.getElementById('prog-ora').value;
+  if (!clientId || !data || !ora) { alert('Câmpurile marcate cu * sunt obligatorii.'); return; }
+
+  const obj = {
+    clientId, data, ora,
+    tip:  document.getElementById('prog-tip').value,
+    note: document.getElementById('prog-note').value.trim()
+  };
+  if (editId.programare) {
+    Object.assign(DB.programari.find(x=>x.id===editId.programare), obj);
+  } else {
+    obj.id = nextId(DB.programari);
+    DB.programari.push(obj);
+  }
+  save(); closeModal('programare'); renderProgramari();
+}
+
+function savePlata() {
+  const clientId = Number(document.getElementById('pl-client').value);
+  const suma     = document.getElementById('pl-suma').value;
+  const data     = document.getElementById('pl-data').value;
+  if (!clientId || !suma || !data) { alert('Câmpurile marcate cu * sunt obligatorii.'); return; }
+
+  const obj = {
+    clientId, suma: Number(suma), data,
+    tip:    document.getElementById('pl-tip').value,
+    metoda: document.getElementById('pl-metoda').value,
+    note:   document.getElementById('pl-note').value.trim()
+  };
+  if (editId.plata) {
+    Object.assign(DB.plati.find(x=>x.id===editId.plata), obj);
+  } else {
+    obj.id = nextId(DB.plati);
+    DB.plati.push(obj);
+  }
+  save(); closeModal('plata'); renderPlati();
+}
+
+// ── Delete ────────────────────────────────────────────────
+function deleteItem(coll, id) {
+  if (!confirm('Sigur ștergi această înregistrare?')) return;
+  DB[coll] = DB[coll].filter(x => x.id !== id);
+  save();
+  if (coll === 'clienti')   renderClienti();
+  if (coll === 'comenzi')   renderComenzi();
+  if (coll === 'programari') renderProgramari();
+  if (coll === 'plati')     renderPlati();
+}
+
+// Close modal on backdrop click
+document.querySelectorAll('.modal-bg').forEach(bg => {
+  bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('open'); });
+});
+
+// ── Init ──────────────────────────────────────────────────
+load();
+renderDashboard();
+</script>
+</body>
+</html>
