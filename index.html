@@ -311,16 +311,144 @@
     .empty-state p { font-size: .9rem; }
 
     /* ── Responsive ────────────────────────────────────── */
-    @media (max-width: 900px) {
-      .sidebar { width: 60px; }
-      .sidebar-brand, nav a span { display: none; }
-      .main { margin-left: 60px; padding: 16px; }
+
+    /* Bottom nav — ascuns implicit, vizibil doar pe mobil */
+    .bottom-nav { display: none; }
+
+    /* ── Tabletă (600–900px) ────────────────────────────── */
+    @media (max-width: 900px) and (min-width: 769px) {
+      .sidebar { width: 64px; }
+      .sidebar-brand, .sidebar nav a span { display: none; }
+      .sidebar nav a { justify-content: center; padding: 12px; }
+      .main { margin-left: 64px; padding: 20px; }
       .dash-grid { grid-template-columns: 1fr; }
       .form-grid { grid-template-columns: 1fr; }
       .form-grid .full { grid-column: 1; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
     }
-    @media (max-width: 600px) {
-      .stats-grid { grid-template-columns: 1fr 1fr; }
+
+    /* ── Mobil (≤ 768px) ────────────────────────────────── */
+    @media (max-width: 768px) {
+      /* Sidebar ascuns, înlocuit de bottom nav */
+      .sidebar { display: none; }
+
+      /* Bottom nav vizibil */
+      .bottom-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        background: var(--dark);
+        z-index: 200;
+        border-top: 1px solid rgba(255,255,255,.1);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      .bottom-nav a {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 2px;
+        color: #9e8090;
+        text-decoration: none;
+        font-size: .58rem;
+        gap: 3px;
+        cursor: pointer;
+        border-top: 2px solid transparent;
+        transition: all .15s;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .bottom-nav a .ico { font-size: 1.25rem; }
+      .bottom-nav a.active { color: var(--rose); border-top-color: var(--rose); background: none; border-left-color: transparent; }
+      .bottom-nav a:active { background: rgba(255,255,255,.05); }
+
+      /* Main: fără margin, spațiu pentru bottom nav */
+      .main {
+        margin-left: 0;
+        padding: 16px 14px;
+        padding-bottom: 80px;
+      }
+
+      /* Page header: vertical */
+      .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+      .page-header h2 { font-size: 1.25rem; }
+      .page-header .btn { width: 100%; justify-content: center; }
+      .page-header > div { width: 100%; }
+      .page-header > div[style] { flex-direction: column !important; }
+
+      /* Stats: 2 coloane */
+      .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+      .stat-card { padding: 14px; }
+      .stat-card .value { font-size: 1.5rem; }
+
+      /* Dash grid: 1 coloană */
+      .dash-grid { grid-template-columns: 1fr; gap: 12px; }
+
+      /* Tabele: scroll orizontal cu touch */
+      .table-wrap { -webkit-overflow-scrolling: touch; }
+      table { font-size: .8rem; }
+      th { padding: 8px 10px; font-size: .7rem; }
+      td { padding: 9px 10px; }
+
+      /* Search bar: vertical */
+      .search-bar { flex-direction: column; gap: 8px; }
+      .search-bar input,
+      .search-bar select { width: 100%; }
+
+      /* Card: padding mai mic */
+      .card-body { padding: 14px; }
+      .card-header { padding: 12px 14px; }
+
+      /* Butoane acțiuni din tabel: mai mari pentru touch */
+      .btn-sm { padding: 7px 12px; font-size: .78rem; }
+
+      /* Modal: full-screen bottom sheet */
+      .modal-bg { align-items: flex-end; padding: 0; }
+      .modal {
+        border-radius: 20px 20px 0 0;
+        max-width: 100%;
+        width: 100%;
+        max-height: 92dvh;
+        margin: 0;
+      }
+      .modal-header { padding: 16px 18px 12px; }
+      .modal-body  { padding: 14px 18px; }
+      .modal-footer { padding: 12px 18px 20px; flex-direction: column; }
+      .modal-footer .btn { width: 100%; justify-content: center; }
+
+      /* Modal view client mai lat */
+      #modal-view-client .modal { max-width: 100%; }
+
+      /* Form grid: 1 coloană */
+      .form-grid { grid-template-columns: 1fr; gap: 10px; }
+      .form-grid .full { grid-column: 1; }
+
+      /* Tabs: scroll orizontal */
+      .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; }
+      .tab { white-space: nowrap; padding: 9px 14px; font-size: .82rem; }
+
+      /* Detail view */
+      .detail-row { flex-direction: column; gap: 2px; }
+      .detail-row .lbl { min-width: unset; font-size: .75rem; }
+    }
+
+    /* ── Telefoane mici (≤ 380px) ───────────────────────── */
+    @media (max-width: 380px) {
+      .main { padding: 12px 10px; padding-bottom: 80px; }
+      .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .stat-card .value { font-size: 1.3rem; }
+      .btn { padding: 8px 14px; font-size: .82rem; }
+      .bottom-nav a { font-size: .52rem; }
+      .bottom-nav a .ico { font-size: 1.1rem; }
     }
   </style>
 </head>
@@ -354,6 +482,28 @@
       </a>
     </nav>
   </aside>
+
+  <!-- ── Bottom Nav (mobil) ── -->
+  <nav class="bottom-nav" id="bottom-nav">
+    <a class="active" onclick="showPage('dashboard')">
+      <span class="ico">🏠</span><span>Home</span>
+    </a>
+    <a onclick="showPage('clienti')">
+      <span class="ico">👤</span><span>Clienți</span>
+    </a>
+    <a onclick="showPage('comenzi')">
+      <span class="ico">👗</span><span>Comenzi</span>
+    </a>
+    <a onclick="showPage('programari')">
+      <span class="ico">📅</span><span>Program</span>
+    </a>
+    <a onclick="showPage('plati')">
+      <span class="ico">💰</span><span>Plăți</span>
+    </a>
+    <a onclick="showPage('furnizori')">
+      <span class="ico">🏭</span><span>Furnizori</span>
+    </a>
+  </nav>
 
   <!-- ── Main ── -->
   <main class="main">
