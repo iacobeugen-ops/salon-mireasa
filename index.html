@@ -980,8 +980,14 @@ let editId = { client: null, comanda: null, programare: null, plata: null, furni
 function save() { localStorage.setItem('bridal_db', JSON.stringify(DB)); }
 function load() {
   const d = localStorage.getItem('bridal_db');
-  if (d) DB = JSON.parse(d);
-  else seedData();
+  if (d) {
+    DB = JSON.parse(d);
+    // Migrare: asigură colecțiile noi pentru utilizatorii cu date vechi
+    if (!DB.furnizori)       DB.furnizori = [];
+    if (!DB.plati_furnizori) DB.plati_furnizori = [];
+  } else {
+    seedData();
+  }
 }
 
 function seedData() {
