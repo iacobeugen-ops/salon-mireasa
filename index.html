@@ -349,6 +349,9 @@
       <a onclick="showPage('plati')">
         <span class="ico">💰</span><span>Plăți</span>
       </a>
+      <a onclick="showPage('furnizori')">
+        <span class="ico">🏭</span><span>Furnizori</span>
+      </a>
     </nav>
   </aside>
 
@@ -526,6 +529,94 @@
               </thead>
               <tbody id="tbody-plati"></tbody>
             </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ FURNIZORI ══ -->
+    <div id="page-furnizori" class="page">
+      <div class="page-header">
+        <div><h2>Furnizori</h2><p>Gestiune furnizori și plăți către furnizori</p></div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-outline" onclick="openModal('plata-furnizor')">+ Plată furnizor</button>
+          <button class="btn btn-primary" onclick="openModal('furnizor')">+ Adaugă furnizor</button>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" onclick="switchFurnizoriTab('lista',this)">Lista furnizori</div>
+        <div class="tab" onclick="switchFurnizoriTab('plati',this)">Plăți furnizori</div>
+      </div>
+
+      <!-- Tab: Lista furnizori -->
+      <div id="ftab-lista">
+        <div class="card">
+          <div class="card-body">
+            <div class="search-bar">
+              <input type="text" id="search-furnizori" placeholder="Caută după nume, persoană…" oninput="renderFurnizori()">
+              <select id="filter-furnizori" onchange="renderFurnizori()">
+                <option value="">Toate categoriile</option>
+                <option value="rochii">Rochii</option>
+                <option value="accesorii">Accesorii</option>
+                <option value="materiale">Materiale</option>
+                <option value="croitorie">Croitorie</option>
+                <option value="curatorie">Curătorie</option>
+                <option value="altele">Altele</option>
+              </select>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Firmă / Furnizor</th>
+                    <th>Persoană contact</th>
+                    <th>Telefon</th>
+                    <th>Categorie</th>
+                    <th>Restanțe</th>
+                    <th>Acțiuni</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-furnizori"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Plăți furnizori -->
+      <div id="ftab-plati" style="display:none">
+        <div class="stats-grid" id="stats-plati-f"></div>
+        <div class="card">
+          <div class="card-body">
+            <div class="search-bar">
+              <input type="text" id="search-plati-f" placeholder="Caută după furnizor…" oninput="renderPlatiF()">
+              <select id="filter-plati-f" onchange="renderPlatiF()">
+                <option value="">Toate statusurile</option>
+                <option value="neplatit">Neplatit</option>
+                <option value="partial">Parțial</option>
+                <option value="platit">Plătit</option>
+              </select>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Furnizor</th>
+                    <th>Sumă (RON)</th>
+                    <th>Data facturii</th>
+                    <th>Scadență</th>
+                    <th>Status</th>
+                    <th>Metodă</th>
+                    <th>Factură</th>
+                    <th>Acțiuni</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-plati-f"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -747,6 +838,117 @@
   </div>
 </div>
 
+<!-- Modal: Furnizor -->
+<div class="modal-bg" id="modal-furnizor">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-furnizor-title">Adaugă furnizor</h3>
+      <button class="modal-close" onclick="closeModal('furnizor')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Firmă / Nume furnizor *</label>
+          <input type="text" id="f-nume" placeholder="SC Rochii Elegante SRL">
+        </div>
+        <div class="form-group">
+          <label>Persoană contact</label>
+          <input type="text" id="f-persoana" placeholder="Ion Georgescu">
+        </div>
+        <div class="form-group">
+          <label>Categorie *</label>
+          <select id="f-categorie">
+            <option value="rochii">Rochii</option>
+            <option value="accesorii">Accesorii</option>
+            <option value="materiale">Materiale</option>
+            <option value="croitorie">Croitorie</option>
+            <option value="curatorie">Curătorie</option>
+            <option value="altele">Altele</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Telefon</label>
+          <input type="tel" id="f-telefon" placeholder="0722 xxx xxx">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="f-email" placeholder="contact@furnizor.ro">
+        </div>
+        <div class="form-group full">
+          <label>Adresă</label>
+          <input type="text" id="f-adresa" placeholder="Str. Florilor nr. 10, București">
+        </div>
+        <div class="form-group full">
+          <label>Note</label>
+          <textarea id="f-note" placeholder="Termene de plată, condiții speciale…"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('furnizor')">Anulează</button>
+      <button class="btn btn-primary" onclick="saveFurnizor()">Salvează</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Plată Furnizor -->
+<div class="modal-bg" id="modal-plata-furnizor">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-plata-f-title">Adaugă plată furnizor</h3>
+      <button class="modal-close" onclick="closeModal('plata-furnizor')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Furnizor *</label>
+          <select id="pf-furnizor"></select>
+        </div>
+        <div class="form-group">
+          <label>Sumă (RON) *</label>
+          <input type="number" id="pf-suma" placeholder="2500">
+        </div>
+        <div class="form-group">
+          <label>Data facturii *</label>
+          <input type="date" id="pf-data">
+        </div>
+        <div class="form-group">
+          <label>Scadență</label>
+          <input type="date" id="pf-scadenta">
+        </div>
+        <div class="form-group">
+          <label>Status *</label>
+          <select id="pf-status">
+            <option value="neplatit">Neplatit</option>
+            <option value="partial">Parțial plătit</option>
+            <option value="platit">Plătit</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Metodă plată</label>
+          <select id="pf-metoda">
+            <option value="cash">Cash</option>
+            <option value="card">Card</option>
+            <option value="transfer">Transfer bancar</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Nr. Factură</label>
+          <input type="text" id="pf-factura" placeholder="FAC-2025-001">
+        </div>
+        <div class="form-group full">
+          <label>Note</label>
+          <textarea id="pf-note" placeholder="Detalii…"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('plata-furnizor')">Anulează</button>
+      <button class="btn btn-primary" onclick="savePlataF()">Salvează</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal: View Client -->
 <div class="modal-bg" id="modal-view-client">
   <div class="modal" style="max-width:620px">
@@ -767,10 +969,12 @@ let DB = {
   clienti: [],
   comenzi: [],
   programari: [],
-  plati: []
+  plati: [],
+  furnizori: [],
+  plati_furnizori: []
 };
 
-let editId = { client: null, comanda: null, programare: null, plata: null };
+let editId = { client: null, comanda: null, programare: null, plata: null, furnizor: null, 'plata-furnizor': null };
 
 // ── Persistence ─────────────────────────────────────────
 function save() { localStorage.setItem('bridal_db', JSON.stringify(DB)); }
@@ -801,6 +1005,16 @@ function seedData() {
     { id: 2, clientId:2, tip:'avans', suma:1500, data:'2024-11-20', metoda:'card', note:'' },
     { id: 3, clientId:3, tip:'final', suma:5200, data:'2025-05-24', metoda:'transfer', note:'Achitat integral' }
   ];
+  DB.furnizori = [
+    { id:1, nume:'Pronovias Romania', persoana:'Ana Dumitrescu', categorie:'rochii', telefon:'021 300 100', email:'ana@pronovias.ro', adresa:'Calea Victoriei 12, București', note:'Termene 30 zile' },
+    { id:2, nume:'Dantelaria SA', persoana:'Mihai Pop', categorie:'materiale', telefon:'0744 200 300', email:'contact@dantelaria.ro', adresa:'Cluj-Napoca', note:'' },
+    { id:3, nume:'Croitorie Eleganta', persoana:'Elena Matei', categorie:'croitorie', telefon:'0756 400 500', email:'', adresa:'Str. Florilor 5, București', note:'Modificări speciale' }
+  ];
+  DB.plati_furnizori = [
+    { id:1, furnizorId:1, suma:15000, data:'2025-01-10', scadenta:'2025-02-10', status:'platit', metoda:'transfer', factura:'FAC-2025-001', note:'Colecție primăvară' },
+    { id:2, furnizorId:2, suma:3500, data:'2025-03-01', scadenta:'2025-04-01', status:'neplatit', metoda:'transfer', factura:'FAC-2025-045', note:'' },
+    { id:3, furnizorId:3, suma:800, data:'2025-03-15', scadenta:'2025-03-20', status:'partial', metoda:'cash', factura:'', note:'Plătit 400 RON, rest 400' }
+  ];
   save();
 }
 
@@ -819,6 +1033,7 @@ function showPage(name) {
   if (name === 'comenzi')   renderComenzi();
   if (name === 'programari') renderProgramari();
   if (name === 'plati')     renderPlati();
+  if (name === 'furnizori') { renderFurnizori(); }
 }
 
 // ── Helpers ──────────────────────────────────────────────
@@ -834,6 +1049,20 @@ function fmtDate(d) {
 function fmtMoney(n) {
   return Number(n).toLocaleString('ro-RO') + ' RON';
 }
+
+const CAT_FURNIZOR = {
+  rochii:    'Rochii',
+  accesorii: 'Accesorii',
+  materiale: 'Materiale',
+  croitorie: 'Croitorie',
+  curatorie: 'Curătorie',
+  altele:    'Altele'
+};
+const STATUS_PLATA_F = {
+  neplatit: { label:'Neplatit',       cls:'badge-red'    },
+  partial:  { label:'Parțial plătit', cls:'badge-yellow' },
+  platit:   { label:'Plătit',         cls:'badge-green'  }
+};
 
 const STATUS_COMANDA = {
   masura:     { label:'La măsură',    cls:'badge-blue'   },
@@ -851,6 +1080,11 @@ const TIP_PROG = {
 };
 
 function badge(text, cls) { return `<span class="badge ${cls}">${text}</span>`; }
+
+function furnizorName(id) {
+  const f = DB.furnizori.find(x => x.id === id);
+  return f ? f.nume : '—';
+}
 
 // ── Dashboard ────────────────────────────────────────────
 function renderDashboard() {
@@ -1146,6 +1380,113 @@ function renderPlati() {
   `).join('');
 }
 
+// ── Furnizori ─────────────────────────────────────────────
+function switchFurnizoriTab(tab, el) {
+  document.getElementById('ftab-lista').style.display = tab === 'lista' ? '' : 'none';
+  document.getElementById('ftab-plati').style.display = tab === 'plati' ? '' : 'none';
+  document.querySelectorAll('#page-furnizori .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  if (tab === 'lista') renderFurnizori();
+  if (tab === 'plati') renderPlatiF();
+}
+
+function renderFurnizori() {
+  const q  = (document.getElementById('search-furnizori').value || '').toLowerCase();
+  const ct = document.getElementById('filter-furnizori').value;
+  let list = DB.furnizori.filter(f => {
+    const match = (f.nume + ' ' + (f.persoana||'') + ' ' + (f.telefon||'')).toLowerCase().includes(q);
+    const ctOk  = !ct || f.categorie === ct;
+    return match && ctOk;
+  });
+
+  const tbody = document.getElementById('tbody-furnizori');
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="ico">🏭</div><p>Niciun furnizor găsit</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map((f, i) => {
+    const restante = DB.plati_furnizori
+      .filter(p => p.furnizorId === f.id && p.status !== 'platit')
+      .reduce((s,p) => s + Number(p.suma), 0);
+    return `
+    <tr>
+      <td>${i+1}</td>
+      <td><strong>${f.nume}</strong></td>
+      <td>${f.persoana||'—'}</td>
+      <td>${f.telefon||'—'}</td>
+      <td>${badge(CAT_FURNIZOR[f.categorie]||f.categorie, 'badge-blue')}</td>
+      <td>${restante > 0
+        ? `<span style="color:#c0392b;font-weight:600">${fmtMoney(restante)}</span>`
+        : `<span style="color:#1e7c45">—</span>`}</td>
+      <td>
+        <button class="btn btn-sm btn-gold" onclick="editFurnizor(${f.id})">✏️</button>
+        <button class="btn btn-sm btn-danger" style="margin-left:4px" onclick="deleteItem('furnizori',${f.id})">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderPlatiF() {
+  const q  = (document.getElementById('search-plati-f').value || '').toLowerCase();
+  const st = document.getElementById('filter-plati-f').value;
+  let list = DB.plati_furnizori.filter(p => {
+    const name = furnizorName(p.furnizorId).toLowerCase();
+    const match = name.includes(q) || (p.factura||'').toLowerCase().includes(q);
+    const stOk  = !st || p.status === st;
+    return match && stOk;
+  }).sort((a,b) => b.data.localeCompare(a.data));
+
+  const totalFacturi = DB.plati_furnizori.reduce((s,p) => s + Number(p.suma), 0);
+  const totalPlatit  = DB.plati_furnizori.filter(p => p.status === 'platit').reduce((s,p) => s + Number(p.suma), 0);
+  const totalRestant = DB.plati_furnizori.filter(p => p.status !== 'platit').reduce((s,p) => s + Number(p.suma), 0);
+  document.getElementById('stats-plati-f').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-icon">📄</div>
+      <div class="label">Total facturi</div>
+      <div class="value" style="font-size:1.3rem">${fmtMoney(totalFacturi)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">✅</div>
+      <div class="label">Total plătit</div>
+      <div class="value" style="font-size:1.3rem;color:var(--rose)">${fmtMoney(totalPlatit)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">⚠️</div>
+      <div class="label">Restanțe</div>
+      <div class="value" style="font-size:1.3rem;color:#c0392b">${fmtMoney(totalRestant)}</div>
+    </div>
+  `;
+
+  const tbody = document.getElementById('tbody-plati-f');
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="ico">📄</div><p>Nicio plată înregistrată</p></div></td></tr>`;
+    return;
+  }
+  const today = new Date().toISOString().slice(0,10);
+  const metodaLabel = { cash:'Cash', card:'Card', transfer:'Transfer bancar' };
+  tbody.innerHTML = list.map((p, i) => {
+    const stObj   = STATUS_PLATA_F[p.status] || { label:p.status, cls:'badge-gray' };
+    const overdue = p.scadenta && p.scadenta < today && p.status !== 'platit';
+    return `
+    <tr${overdue ? ' style="background:#fff5f5"' : ''}>
+      <td>${i+1}</td>
+      <td><strong>${furnizorName(p.furnizorId)}</strong></td>
+      <td><strong>${fmtMoney(p.suma)}</strong></td>
+      <td>${fmtDate(p.data)}</td>
+      <td>${p.scadenta
+        ? `<span${overdue?' style="color:#c0392b;font-weight:600"':''}>${fmtDate(p.scadenta)}${overdue?' ⚠️':''}</span>`
+        : '—'}</td>
+      <td>${badge(stObj.label, stObj.cls)}</td>
+      <td>${metodaLabel[p.metoda]||p.metoda||'—'}</td>
+      <td style="font-size:.82rem;color:var(--gray-4)">${p.factura||'—'}</td>
+      <td>
+        <button class="btn btn-sm btn-gold" onclick="editPlataF(${p.id})">✏️</button>
+        <button class="btn btn-sm btn-danger" style="margin-left:4px" onclick="deleteItem('plati_furnizori',${p.id})">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
 // ── Modal open/close ──────────────────────────────────────
 function openModal(type) {
   editId[type] = null;
@@ -1177,6 +1518,23 @@ function openModal(type) {
     document.getElementById('pl-data').value = new Date().toISOString().slice(0,10);
     document.getElementById('pl-tip').value = 'avans';
     document.getElementById('pl-metoda').value = 'cash';
+  }
+  if (type === 'furnizor') {
+    editId.furnizor = null;
+    document.getElementById('modal-furnizor-title').textContent = 'Adaugă furnizor';
+    ['nume','persoana','telefon','email','adresa','note'].forEach(f => document.getElementById('f-'+f).value = '');
+    document.getElementById('f-categorie').value = 'rochii';
+  }
+  if (type === 'plata-furnizor') {
+    editId['plata-furnizor'] = null;
+    document.getElementById('modal-plata-f-title').textContent = 'Adaugă plată furnizor';
+    if (DB.furnizori.length === 0) { alert('Adaugă mai întâi un furnizor.'); return; }
+    populateSelect('pf-furnizor', DB.furnizori, f => f.nume);
+    ['suma','factura','note'].forEach(f => document.getElementById('pf-'+f).value = '');
+    document.getElementById('pf-data').value     = new Date().toISOString().slice(0,10);
+    document.getElementById('pf-scadenta').value = '';
+    document.getElementById('pf-status').value   = 'neplatit';
+    document.getElementById('pf-metoda').value   = 'transfer';
   }
   document.getElementById('modal-'+type).classList.add('open');
 }
@@ -1253,6 +1611,38 @@ function editPlata(id) {
   document.getElementById('pl-metoda').value = p.metoda;
   document.getElementById('pl-note').value   = p.note||'';
   document.getElementById('modal-plata').classList.add('open');
+}
+
+function editFurnizor(id) {
+  const f = DB.furnizori.find(x=>x.id===id);
+  if (!f) return;
+  editId.furnizor = id;
+  document.getElementById('modal-furnizor-title').textContent = 'Editează furnizor';
+  document.getElementById('f-nume').value      = f.nume;
+  document.getElementById('f-persoana').value  = f.persoana||'';
+  document.getElementById('f-categorie').value = f.categorie;
+  document.getElementById('f-telefon').value   = f.telefon||'';
+  document.getElementById('f-email').value     = f.email||'';
+  document.getElementById('f-adresa').value    = f.adresa||'';
+  document.getElementById('f-note').value      = f.note||'';
+  document.getElementById('modal-furnizor').classList.add('open');
+}
+
+function editPlataF(id) {
+  const p = DB.plati_furnizori.find(x=>x.id===id);
+  if (!p) return;
+  editId['plata-furnizor'] = id;
+  document.getElementById('modal-plata-f-title').textContent = 'Editează plată furnizor';
+  populateSelect('pf-furnizor', DB.furnizori, f => f.nume);
+  document.getElementById('pf-furnizor').value = p.furnizorId;
+  document.getElementById('pf-suma').value     = p.suma;
+  document.getElementById('pf-data').value     = p.data;
+  document.getElementById('pf-scadenta').value = p.scadenta||'';
+  document.getElementById('pf-status').value   = p.status;
+  document.getElementById('pf-metoda').value   = p.metoda||'transfer';
+  document.getElementById('pf-factura').value  = p.factura||'';
+  document.getElementById('pf-note').value     = p.note||'';
+  document.getElementById('modal-plata-furnizor').classList.add('open');
 }
 
 // ── Save handlers ─────────────────────────────────────────
@@ -1346,6 +1736,49 @@ function savePlata() {
   save(); closeModal('plata'); renderPlati();
 }
 
+function saveFurnizor() {
+  const nume = document.getElementById('f-nume').value.trim();
+  if (!nume) { alert('Numele furnizorului este obligatoriu.'); return; }
+  const obj = {
+    nume,
+    persoana:  document.getElementById('f-persoana').value.trim(),
+    categorie: document.getElementById('f-categorie').value,
+    telefon:   document.getElementById('f-telefon').value.trim(),
+    email:     document.getElementById('f-email').value.trim(),
+    adresa:    document.getElementById('f-adresa').value.trim(),
+    note:      document.getElementById('f-note').value.trim()
+  };
+  if (editId.furnizor) {
+    Object.assign(DB.furnizori.find(x=>x.id===editId.furnizor), obj);
+  } else {
+    obj.id = nextId(DB.furnizori);
+    DB.furnizori.push(obj);
+  }
+  save(); closeModal('furnizor'); renderFurnizori();
+}
+
+function savePlataF() {
+  const furnizorId = Number(document.getElementById('pf-furnizor').value);
+  const suma       = document.getElementById('pf-suma').value;
+  const data       = document.getElementById('pf-data').value;
+  if (!furnizorId || !suma || !data) { alert('Câmpurile marcate cu * sunt obligatorii.'); return; }
+  const obj = {
+    furnizorId, suma: Number(suma), data,
+    scadenta: document.getElementById('pf-scadenta').value,
+    status:   document.getElementById('pf-status').value,
+    metoda:   document.getElementById('pf-metoda').value,
+    factura:  document.getElementById('pf-factura').value.trim(),
+    note:     document.getElementById('pf-note').value.trim()
+  };
+  if (editId['plata-furnizor']) {
+    Object.assign(DB.plati_furnizori.find(x=>x.id===editId['plata-furnizor']), obj);
+  } else {
+    obj.id = nextId(DB.plati_furnizori);
+    DB.plati_furnizori.push(obj);
+  }
+  save(); closeModal('plata-furnizor'); renderPlatiF();
+}
+
 // ── Delete ────────────────────────────────────────────────
 function deleteItem(coll, id) {
   if (!confirm('Sigur ștergi această înregistrare?')) return;
@@ -1354,7 +1787,9 @@ function deleteItem(coll, id) {
   if (coll === 'clienti')   renderClienti();
   if (coll === 'comenzi')   renderComenzi();
   if (coll === 'programari') renderProgramari();
-  if (coll === 'plati')     renderPlati();
+  if (coll === 'plati')          renderPlati();
+  if (coll === 'furnizori')      renderFurnizori();
+  if (coll === 'plati_furnizori') renderPlatiF();
 }
 
 // Close modal on backdrop click
