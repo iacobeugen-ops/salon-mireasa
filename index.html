@@ -310,6 +310,51 @@
     .empty-state .ico { font-size: 3rem; margin-bottom: 12px; }
     .empty-state p { font-size: .9rem; }
 
+    /* ── Invoice alerts ─────────────────────────────────── */
+    .badge-orange { background: #fde8d0; color: #c05500; }
+    .badge-purple { background: #ede4f7; color: #6b35a8; }
+    .row-overdue td { background: #fff5f5 !important; }
+    .row-soon    td { background: #fffbf0 !important; }
+    .alert-tag {
+      display: inline-block;
+      font-size: .65rem; font-weight: 700;
+      padding: 2px 6px; border-radius: 20px;
+      margin-left: 5px; vertical-align: middle;
+    }
+    .alert-tag-red    { background: #fde0e0; color: #c0392b; }
+    .alert-tag-orange { background: #fde8d0; color: #c05500; }
+
+    /* ── Invoice detail modal ───────────────────────────── */
+    .factura-header {
+      background: var(--gray-1);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 16px;
+    }
+    .factura-header .fh-row {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: .88rem;
+    }
+    .factura-header .fh-row + .fh-row { margin-top: 6px; }
+    .factura-header .fh-label { color: var(--gray-4); }
+    .factura-header .fh-val   { font-weight: 600; color: var(--dark); }
+    .plati-list { list-style: none; }
+    .plati-list li {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 9px 0; border-bottom: 1px solid var(--gray-2);
+      font-size: .86rem;
+    }
+    .plati-list li:last-child { border-bottom: none; }
+    .plati-list .pl-left  { color: var(--gray-4); }
+    .plati-list .pl-right { font-weight: 600; color: var(--dark); }
+    .suma-ramasa-bar {
+      margin-top: 14px; padding: 12px 14px;
+      background: var(--gold-lt); border-radius: 8px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .suma-ramasa-bar .sr-label { font-size: .82rem; color: var(--text); }
+    .suma-ramasa-bar .sr-val   { font-size: 1.1rem; font-weight: 700; color: var(--rose-dk); }
+
     /* ── Responsive ────────────────────────────────────── */
 
     /* Bottom nav — ascuns implicit, vizibil doar pe mobil */
@@ -687,24 +732,29 @@
     <!-- ══ FURNIZORI ══ -->
     <div id="page-furnizori" class="page">
       <div class="page-header">
-        <div><h2>Furnizori</h2><p>Gestiune furnizori și plăți către furnizori</p></div>
-        <div style="display:flex;gap:10px">
-          <button class="btn btn-outline" onclick="openModal('plata-furnizor')">+ Plată furnizor</button>
-          <button class="btn btn-primary" onclick="openModal('furnizor')">+ Adaugă furnizor</button>
+        <div><h2>Furnizori &amp; Facturi</h2><p>Gestiune furnizori, facturi și plăți</p></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" onclick="openModal('plata-factura')">+ Plată</button>
+          <button class="btn btn-outline btn-sm" onclick="openModal('factura')">+ Factură</button>
+          <button class="btn btn-primary btn-sm" onclick="openModal('furnizor')">+ Furnizor</button>
         </div>
       </div>
 
+      <!-- Mini dashboard -->
+      <div class="stats-grid" id="stats-furnizori-dash"></div>
+
       <div class="tabs">
-        <div class="tab active" onclick="switchFurnizoriTab('lista',this)">Lista furnizori</div>
-        <div class="tab" onclick="switchFurnizoriTab('plati',this)">Plăți furnizori</div>
+        <div class="tab active" onclick="switchFurnizoriTab('furnizori',this)">🏭 Furnizori</div>
+        <div class="tab" onclick="switchFurnizoriTab('facturi',this)">📄 Facturi</div>
+        <div class="tab" onclick="switchFurnizoriTab('plati',this)">💳 Plăți</div>
       </div>
 
-      <!-- Tab: Lista furnizori -->
-      <div id="ftab-lista">
+      <!-- Tab: Furnizori -->
+      <div id="ftab-furnizori">
         <div class="card">
           <div class="card-body">
             <div class="search-bar">
-              <input type="text" id="search-furnizori" placeholder="Caută după nume, persoană…" oninput="renderFurnizori()">
+              <input type="text" id="search-furnizori" placeholder="Caută după nume, CUI, contact…" oninput="renderFurnizori()">
               <select id="filter-furnizori" onchange="renderFurnizori()">
                 <option value="">Toate categoriile</option>
                 <option value="rochii">Rochii</option>
@@ -717,17 +767,11 @@
             </div>
             <div class="table-wrap">
               <table>
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Firmă / Furnizor</th>
-                    <th>Persoană contact</th>
-                    <th>Telefon</th>
-                    <th>Categorie</th>
-                    <th>Restanțe</th>
-                    <th>Acțiuni</th>
-                  </tr>
-                </thead>
+                <thead><tr>
+                  <th>#</th><th>Firmă / Furnizor</th><th>CUI</th>
+                  <th>Contact</th><th>Categorie</th>
+                  <th>Facturi deschise</th><th>Total datorat</th><th>Acțiuni</th>
+                </tr></thead>
                 <tbody id="tbody-furnizori"></tbody>
               </table>
             </div>
@@ -735,35 +779,54 @@
         </div>
       </div>
 
-      <!-- Tab: Plăți furnizori -->
-      <div id="ftab-plati" style="display:none">
-        <div class="stats-grid" id="stats-plati-f"></div>
+      <!-- Tab: Facturi -->
+      <div id="ftab-facturi" style="display:none">
         <div class="card">
           <div class="card-body">
             <div class="search-bar">
-              <input type="text" id="search-plati-f" placeholder="Caută după furnizor…" oninput="renderPlatiF()">
-              <select id="filter-plati-f" onchange="renderPlatiF()">
+              <input type="text" id="search-facturi" placeholder="Caută după nr. factură, furnizor…" oninput="renderFacturi()">
+              <select id="filter-facturi" onchange="renderFacturi()">
                 <option value="">Toate statusurile</option>
-                <option value="neplatit">Neplatit</option>
-                <option value="partial">Parțial</option>
-                <option value="platit">Plătit</option>
+                <option value="neplatita">Neplatite</option>
+                <option value="partial">Parțial plătite</option>
+                <option value="platita">Plătite integral</option>
               </select>
             </div>
             <div class="table-wrap">
               <table>
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Furnizor</th>
-                    <th>Sumă (RON)</th>
-                    <th>Data facturii</th>
-                    <th>Scadență</th>
-                    <th>Status</th>
-                    <th>Metodă</th>
-                    <th>Factură</th>
-                    <th>Acțiuni</th>
-                  </tr>
-                </thead>
+                <thead><tr>
+                  <th>#</th><th>Nr. Factură</th><th>Furnizor</th>
+                  <th>Data emiterii</th><th>Scadență</th>
+                  <th>Sumă totală</th><th>Rămas de plată</th>
+                  <th>Status</th><th>Acțiuni</th>
+                </tr></thead>
+                <tbody id="tbody-facturi"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Plăți -->
+      <div id="ftab-plati" style="display:none">
+        <div class="card">
+          <div class="card-body">
+            <div class="search-bar">
+              <input type="text" id="search-plati-f" placeholder="Caută după furnizor, referință…" oninput="renderPlatiFacturi()">
+              <select id="filter-plati-f" onchange="renderPlatiFacturi()">
+                <option value="">Toate metodele</option>
+                <option value="transfer">Transfer / OP</option>
+                <option value="cash">Cash</option>
+                <option value="card">Card</option>
+              </select>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr>
+                  <th>#</th><th>Factură</th><th>Furnizor</th>
+                  <th>Data plății</th><th>Sumă plătită</th>
+                  <th>Modalitate</th><th>Referință OP</th><th>Acțiuni</th>
+                </tr></thead>
                 <tbody id="tbody-plati-f"></tbody>
               </table>
             </div>
@@ -1002,8 +1065,8 @@
           <input type="text" id="f-nume" placeholder="SC Rochii Elegante SRL">
         </div>
         <div class="form-group">
-          <label>Persoană contact</label>
-          <input type="text" id="f-persoana" placeholder="Ion Georgescu">
+          <label>CUI / Cod fiscal</label>
+          <input type="text" id="f-cui" placeholder="RO12345678">
         </div>
         <div class="form-group">
           <label>Categorie *</label>
@@ -1017,12 +1080,20 @@
           </select>
         </div>
         <div class="form-group">
+          <label>Persoană contact</label>
+          <input type="text" id="f-persoana" placeholder="Ion Georgescu">
+        </div>
+        <div class="form-group">
           <label>Telefon</label>
           <input type="tel" id="f-telefon" placeholder="0722 xxx xxx">
         </div>
         <div class="form-group">
           <label>Email</label>
           <input type="email" id="f-email" placeholder="contact@furnizor.ro">
+        </div>
+        <div class="form-group full">
+          <label>IBAN</label>
+          <input type="text" id="f-iban" placeholder="RO49AAAA1B31007593840000">
         </div>
         <div class="form-group full">
           <label>Adresă</label>
@@ -1041,60 +1112,114 @@
   </div>
 </div>
 
-<!-- Modal: Plată Furnizor -->
-<div class="modal-bg" id="modal-plata-furnizor">
+<!-- Modal: Factură -->
+<div class="modal-bg" id="modal-factura">
   <div class="modal">
     <div class="modal-header">
-      <h3 id="modal-plata-f-title">Adaugă plată furnizor</h3>
-      <button class="modal-close" onclick="closeModal('plata-furnizor')">×</button>
+      <h3 id="modal-factura-title">Adaugă factură</h3>
+      <button class="modal-close" onclick="closeModal('factura')">×</button>
     </div>
     <div class="modal-body">
       <div class="form-grid">
         <div class="form-group full">
           <label>Furnizor *</label>
-          <select id="pf-furnizor"></select>
+          <select id="fct-furnizor"></select>
         </div>
         <div class="form-group">
-          <label>Sumă (RON) *</label>
-          <input type="number" id="pf-suma" placeholder="2500">
+          <label>Număr factură *</label>
+          <input type="text" id="fct-numar" placeholder="FAC-2025-001">
         </div>
         <div class="form-group">
-          <label>Data facturii *</label>
-          <input type="date" id="pf-data">
-        </div>
-        <div class="form-group">
-          <label>Scadență</label>
-          <input type="date" id="pf-scadenta">
-        </div>
-        <div class="form-group">
-          <label>Status *</label>
-          <select id="pf-status">
-            <option value="neplatit">Neplatit</option>
-            <option value="partial">Parțial plătit</option>
-            <option value="platit">Plătit</option>
+          <label>Monedă</label>
+          <select id="fct-moneda">
+            <option value="RON">RON</option>
+            <option value="EUR">EUR</option>
+            <option value="USD">USD</option>
           </select>
         </div>
         <div class="form-group">
-          <label>Metodă plată</label>
-          <select id="pf-metoda">
-            <option value="cash">Cash</option>
-            <option value="card">Card</option>
-            <option value="transfer">Transfer bancar</option>
-          </select>
+          <label>Sumă totală *</label>
+          <input type="number" id="fct-suma" placeholder="5000" min="0" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Data emiterii *</label>
+          <input type="date" id="fct-data-emisa">
+        </div>
+        <div class="form-group">
+          <label>Data scadenței</label>
+          <input type="date" id="fct-scadenta">
         </div>
         <div class="form-group full">
-          <label>Nr. Factură</label>
-          <input type="text" id="pf-factura" placeholder="FAC-2025-001">
-        </div>
-        <div class="form-group full">
-          <label>Note</label>
-          <textarea id="pf-note" placeholder="Detalii…"></textarea>
+          <label>Observații</label>
+          <textarea id="fct-obs" placeholder="Detalii comandă, condiții…"></textarea>
         </div>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('plata-furnizor')">Anulează</button>
-      <button class="btn btn-primary" onclick="savePlataF()">Salvează</button>
+      <button class="btn btn-outline" onclick="closeModal('factura')">Anulează</button>
+      <button class="btn btn-primary" onclick="saveFactura()">Salvează</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Plată Factură -->
+<div class="modal-bg" id="modal-plata-factura">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-plata-fct-title">Înregistrează plată</h3>
+      <button class="modal-close" onclick="closeModal('plata-factura')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="plata-fct-info" style="margin-bottom:14px"></div>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Factură *</label>
+          <select id="pfct-factura" onchange="onSelectFacturaPlata()"></select>
+        </div>
+        <div class="form-group">
+          <label>Sumă plătită *</label>
+          <input type="number" id="pfct-suma" placeholder="0" min="0.01" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Data plății *</label>
+          <input type="date" id="pfct-data">
+        </div>
+        <div class="form-group">
+          <label>Modalitate *</label>
+          <select id="pfct-modalitate">
+            <option value="transfer">Transfer bancar / OP</option>
+            <option value="cash">Cash</option>
+            <option value="card">Card</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Referință / Nr. OP</label>
+          <input type="text" id="pfct-referinta" placeholder="OP-2025-042">
+        </div>
+        <div class="form-group full">
+          <label>Observații</label>
+          <textarea id="pfct-obs" placeholder="Detalii…"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('plata-factura')">Anulează</button>
+      <button class="btn btn-primary" onclick="savePlataFactura()">Salvează</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Detaliu Factură -->
+<div class="modal-bg" id="modal-detaliu-factura">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <h3 id="df-title">Detaliu factură</h3>
+      <button class="modal-close" onclick="closeModal('detaliu-factura')">×</button>
+    </div>
+    <div class="modal-body" id="df-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('detaliu-factura')">Închide</button>
+      <button class="btn btn-primary" id="df-btn-plata" onclick="">+ Adaugă plată</button>
     </div>
   </div>
 </div>
@@ -1121,10 +1246,11 @@ let DB = {
   programari: [],
   plati: [],
   furnizori: [],
-  plati_furnizori: []
+  facturi: [],
+  plati_facturi: []
 };
 
-let editId = { client: null, comanda: null, programare: null, plata: null, furnizor: null, 'plata-furnizor': null };
+let editId = { client: null, comanda: null, programare: null, plata: null, furnizor: null, factura: null, 'plata-factura': null };
 
 // ── Persistence ─────────────────────────────────────────
 function save() { localStorage.setItem('bridal_db', JSON.stringify(DB)); }
@@ -1133,8 +1259,11 @@ function load() {
   if (d) {
     DB = JSON.parse(d);
     // Migrare: asigură colecțiile noi pentru utilizatorii cu date vechi
-    if (!DB.furnizori)       DB.furnizori = [];
-    if (!DB.plati_furnizori) DB.plati_furnizori = [];
+    if (!DB.furnizori)    DB.furnizori = [];
+    if (!DB.facturi)      DB.facturi = [];
+    if (!DB.plati_facturi) DB.plati_facturi = [];
+    // Migrare din schema veche plati_furnizori → ignorăm, colecție nouă
+    delete DB.plati_furnizori;
   } else {
     seedData();
   }
@@ -1162,14 +1291,18 @@ function seedData() {
     { id: 3, clientId:3, tip:'final', suma:5200, data:'2025-05-24', metoda:'transfer', note:'Achitat integral' }
   ];
   DB.furnizori = [
-    { id:1, nume:'Pronovias Romania', persoana:'Ana Dumitrescu', categorie:'rochii', telefon:'021 300 100', email:'ana@pronovias.ro', adresa:'Calea Victoriei 12, București', note:'Termene 30 zile' },
-    { id:2, nume:'Dantelaria SA', persoana:'Mihai Pop', categorie:'materiale', telefon:'0744 200 300', email:'contact@dantelaria.ro', adresa:'Cluj-Napoca', note:'' },
-    { id:3, nume:'Croitorie Eleganta', persoana:'Elena Matei', categorie:'croitorie', telefon:'0756 400 500', email:'', adresa:'Str. Florilor 5, București', note:'Modificări speciale' }
+    { id:1, nume:'Pronovias Romania',  persoana:'Ana Dumitrescu', categorie:'rochii',    telefon:'021 300 100',  email:'ana@pronovias.ro',      adresa:'Calea Victoriei 12, București', cui:'RO12345678',  iban:'RO49AAAA1B31007593840000', note:'Termene 30 zile' },
+    { id:2, nume:'Dantelaria SA',      persoana:'Mihai Pop',      categorie:'materiale', telefon:'0744 200 300', email:'contact@dantelaria.ro',  adresa:'Cluj-Napoca',                  cui:'RO87654321',  iban:'',                         note:'' },
+    { id:3, nume:'Croitorie Eleganta', persoana:'Elena Matei',    categorie:'croitorie', telefon:'0756 400 500', email:'',                       adresa:'Str. Florilor 5, București',   cui:'RO11223344',  iban:'',                         note:'Modificări speciale' }
   ];
-  DB.plati_furnizori = [
-    { id:1, furnizorId:1, suma:15000, data:'2025-01-10', scadenta:'2025-02-10', status:'platit', metoda:'transfer', factura:'FAC-2025-001', note:'Colecție primăvară' },
-    { id:2, furnizorId:2, suma:3500, data:'2025-03-01', scadenta:'2025-04-01', status:'neplatit', metoda:'transfer', factura:'FAC-2025-045', note:'' },
-    { id:3, furnizorId:3, suma:800, data:'2025-03-15', scadenta:'2025-03-20', status:'partial', metoda:'cash', factura:'', note:'Plătit 400 RON, rest 400' }
+  DB.facturi = [
+    { id:1, furnizorId:1, numar:'FAC-2025-001', dataEmisa:'2025-01-10', dataScadenta:'2025-02-10', sumaTotala:15000, moneda:'RON', observatii:'Colecție primăvară 2025' },
+    { id:2, furnizorId:2, numar:'FAC-2025-045', dataEmisa:'2026-03-01', dataScadenta:'2026-04-01', sumaTotala:3500,  moneda:'RON', observatii:'' },
+    { id:3, furnizorId:3, numar:'FAC-2025-067', dataEmisa:'2026-03-15', dataScadenta:'2026-03-20', sumaTotala:800,   moneda:'RON', observatii:'Modificări rochii lot 3' }
+  ];
+  DB.plati_facturi = [
+    { id:1, facturaId:1, dataPlata:'2025-02-08', sumaPlata:15000, modalitate:'transfer', referinta:'OP-2025-001', observatii:'Plată integrală' },
+    { id:2, facturaId:3, dataPlata:'2026-03-18', sumaPlata:400,   modalitate:'cash',     referinta:'',            observatii:'Plată parțială' }
   ];
   save();
 }
@@ -1189,7 +1322,7 @@ function showPage(name) {
   if (name === 'comenzi')   renderComenzi();
   if (name === 'programari') renderProgramari();
   if (name === 'plati')     renderPlati();
-  if (name === 'furnizori') { renderFurnizori(); }
+  if (name === 'furnizori') { renderFurnizori(); renderDashFurnizori(); }
 }
 
 // ── Helpers ──────────────────────────────────────────────
@@ -1214,12 +1347,6 @@ const CAT_FURNIZOR = {
   curatorie: 'Curătorie',
   altele:    'Altele'
 };
-const STATUS_PLATA_F = {
-  neplatit: { label:'Neplatit',       cls:'badge-red'    },
-  partial:  { label:'Parțial plătit', cls:'badge-yellow' },
-  platit:   { label:'Plătit',         cls:'badge-green'  }
-};
-
 const STATUS_COMANDA = {
   masura:     { label:'La măsură',    cls:'badge-blue'   },
   productie:  { label:'În producție', cls:'badge-yellow' },
@@ -1240,6 +1367,30 @@ function badge(text, cls) { return `<span class="badge ${cls}">${text}</span>`; 
 function furnizorName(id) {
   const f = DB.furnizori.find(x => x.id === id);
   return f ? f.nume : '—';
+}
+
+// ── Invoice helpers ───────────────────────────────────────
+function getSumaPlatiFactura(facturaId) {
+  return DB.plati_facturi
+    .filter(p => p.facturaId === facturaId)
+    .reduce((s, p) => s + Number(p.sumaPlata), 0);
+}
+function getSumaRamasaFactura(factura) {
+  return Math.max(0, Number(factura.sumaTotala) - getSumaPlatiFactura(factura.id));
+}
+function getStatusFactura(factura) {
+  const platit = getSumaPlatiFactura(factura.id);
+  if (platit <= 0)                               return 'neplatita';
+  if (platit >= Number(factura.sumaTotala))      return 'platita';
+  return 'partial';
+}
+function getAlertaScadenta(dataScadenta, status) {
+  if (!dataScadenta || status === 'platita') return null;
+  const today = new Date().toISOString().slice(0, 10);
+  const diff  = Math.ceil((new Date(dataScadenta) - new Date(today)) / 86400000);
+  if (diff < 0)  return 'overdue';
+  if (diff <= 7) return 'soon';
+  return null;
 }
 
 // ── Dashboard ────────────────────────────────────────────
@@ -1277,6 +1428,12 @@ function renderDashboard() {
       <div class="label">Total încasări</div>
       <div class="value" style="font-size:1.4rem">${fmtMoney(incasari)}</div>
       <div class="sub">${DB.plati.length} tranzacții</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🏭</div>
+      <div class="label">Facturi furnizori</div>
+      <div class="value" style="font-size:1.4rem;color:#c0392b">${fmtMoney(DB.facturi.reduce((s,f)=>s+getSumaRamasaFactura(f),0))}</div>
+      <div class="sub">${DB.facturi.filter(f=>getStatusFactura(f)!=='platita').length} neachitate</div>
     </div>
   `;
 
@@ -1538,109 +1695,220 @@ function renderPlati() {
 
 // ── Furnizori ─────────────────────────────────────────────
 function switchFurnizoriTab(tab, el) {
-  document.getElementById('ftab-lista').style.display = tab === 'lista' ? '' : 'none';
-  document.getElementById('ftab-plati').style.display = tab === 'plati' ? '' : 'none';
+  ['furnizori','facturi','plati'].forEach(t => {
+    document.getElementById('ftab-' + t).style.display = t === tab ? '' : 'none';
+  });
   document.querySelectorAll('#page-furnizori .tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
-  if (tab === 'lista') renderFurnizori();
-  if (tab === 'plati') renderPlatiF();
+  if (tab === 'furnizori') renderFurnizori();
+  if (tab === 'facturi')   renderFacturi();
+  if (tab === 'plati')     renderPlatiFacturi();
+}
+
+function renderDashFurnizori() {
+  const today = new Date().toISOString().slice(0, 10);
+  const neplatite   = DB.facturi.filter(f => getStatusFactura(f) !== 'platita');
+  const totalRestant = neplatite.reduce((s, f) => s + getSumaRamasaFactura(f), 0);
+  const scadenteAzi = DB.facturi.filter(f => {
+    const a = getAlertaScadenta(f.dataScadenta, getStatusFactura(f));
+    return a === 'overdue';
+  }).length;
+  const scadenteCurand = DB.facturi.filter(f => {
+    const a = getAlertaScadenta(f.dataScadenta, getStatusFactura(f));
+    return a === 'soon';
+  }).length;
+
+  document.getElementById('stats-furnizori-dash').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-icon">📄</div>
+      <div class="label">Facturi neplatite</div>
+      <div class="value">${neplatite.length}</div>
+      <div class="sub">din ${DB.facturi.length} total</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">💸</div>
+      <div class="label">Total restant</div>
+      <div class="value" style="font-size:1.3rem;color:#c0392b">${fmtMoney(totalRestant)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">⚠️</div>
+      <div class="label">Scadente depășite</div>
+      <div class="value" style="color:#c0392b">${scadenteAzi}</div>
+      <div class="sub" style="color:#c0392b">${scadenteAzi > 0 ? 'necesită plată urgentă' : 'niciuna'}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🔔</div>
+      <div class="label">Scadente în 7 zile</div>
+      <div class="value" style="color:#c05500">${scadenteCurand}</div>
+      <div class="sub" style="color:#c05500">${scadenteCurand > 0 ? 'atenție scadență' : 'niciuna'}</div>
+    </div>`;
 }
 
 function renderFurnizori() {
+  renderDashFurnizori();
   const q  = (document.getElementById('search-furnizori').value || '').toLowerCase();
   const ct = document.getElementById('filter-furnizori').value;
-  let list = DB.furnizori.filter(f => {
-    const match = (f.nume + ' ' + (f.persoana||'') + ' ' + (f.telefon||'')).toLowerCase().includes(q);
-    const ctOk  = !ct || f.categorie === ct;
-    return match && ctOk;
+  const list = DB.furnizori.filter(f => {
+    const match = (f.nume + ' ' + (f.cui||'') + ' ' + (f.persoana||'')).toLowerCase().includes(q);
+    return match && (!ct || f.categorie === ct);
   });
 
   const tbody = document.getElementById('tbody-furnizori');
   if (list.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="ico">🏭</div><p>Niciun furnizor găsit</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="ico">🏭</div><p>Niciun furnizor găsit</p></div></td></tr>`;
     return;
   }
   tbody.innerHTML = list.map((f, i) => {
-    const restante = DB.plati_furnizori
-      .filter(p => p.furnizorId === f.id && p.status !== 'platit')
-      .reduce((s,p) => s + Number(p.suma), 0);
-    return `
-    <tr>
+    const facturiF   = DB.facturi.filter(fc => fc.furnizorId === f.id);
+    const deschise   = facturiF.filter(fc => getStatusFactura(fc) !== 'platita').length;
+    const totalDat   = facturiF.reduce((s, fc) => s + getSumaRamasaFactura(fc), 0);
+    return `<tr>
       <td>${i+1}</td>
-      <td><strong>${f.nume}</strong></td>
-      <td>${f.persoana||'—'}</td>
-      <td>${f.telefon||'—'}</td>
-      <td>${badge(CAT_FURNIZOR[f.categorie]||f.categorie, 'badge-blue')}</td>
-      <td>${restante > 0
-        ? `<span style="color:#c0392b;font-weight:600">${fmtMoney(restante)}</span>`
-        : `<span style="color:#1e7c45">—</span>`}</td>
+      <td><strong>${f.nume}</strong><br><span style="font-size:.75rem;color:var(--gray-4)">${f.adresa||''}</span></td>
+      <td style="font-size:.82rem">${f.cui||'—'}</td>
+      <td><span style="font-size:.84rem">${f.persoana||'—'}</span><br><span style="font-size:.75rem;color:var(--gray-4)">${f.telefon||''}</span></td>
+      <td>${badge(CAT_FURNIZOR[f.categorie]||f.categorie,'badge-blue')}</td>
+      <td style="text-align:center">${deschise > 0 ? `<span style="font-weight:700;color:#c0392b">${deschise}</span>` : '<span style="color:#1e7c45">0</span>'}</td>
+      <td>${totalDat > 0 ? `<strong style="color:#c0392b">${fmtMoney(totalDat)}</strong>` : '<span style="color:#1e7c45">—</span>'}</td>
       <td>
-        <button class="btn btn-sm btn-gold" onclick="editFurnizor(${f.id})">✏️</button>
-        <button class="btn btn-sm btn-danger" style="margin-left:4px" onclick="deleteItem('furnizori',${f.id})">🗑</button>
+        <button class="btn btn-sm btn-outline" onclick="editFurnizor(${f.id})" title="Editează">✏️</button>
+        <button class="btn btn-sm btn-danger"  onclick="deleteItem('furnizori',${f.id})" style="margin-left:4px" title="Șterge">🗑</button>
       </td>
     </tr>`;
   }).join('');
 }
 
-function renderPlatiF() {
-  const q  = (document.getElementById('search-plati-f').value || '').toLowerCase();
-  const st = document.getElementById('filter-plati-f').value;
-  let list = DB.plati_furnizori.filter(p => {
-    const name = furnizorName(p.furnizorId).toLowerCase();
-    const match = name.includes(q) || (p.factura||'').toLowerCase().includes(q);
-    const stOk  = !st || p.status === st;
-    return match && stOk;
-  }).sort((a,b) => b.data.localeCompare(a.data));
+function renderFacturi() {
+  renderDashFurnizori();
+  const q  = (document.getElementById('search-facturi').value || '').toLowerCase();
+  const st = document.getElementById('filter-facturi').value;
+  const list = DB.facturi.filter(f => {
+    const status = getStatusFactura(f);
+    const match  = (f.numar + ' ' + furnizorName(f.furnizorId)).toLowerCase().includes(q);
+    return match && (!st || status === st);
+  }).sort((a, b) => b.dataEmisa.localeCompare(a.dataEmisa));
 
-  const totalFacturi = DB.plati_furnizori.reduce((s,p) => s + Number(p.suma), 0);
-  const totalPlatit  = DB.plati_furnizori.filter(p => p.status === 'platit').reduce((s,p) => s + Number(p.suma), 0);
-  const totalRestant = DB.plati_furnizori.filter(p => p.status !== 'platit').reduce((s,p) => s + Number(p.suma), 0);
-  document.getElementById('stats-plati-f').innerHTML = `
-    <div class="stat-card">
-      <div class="stat-icon">📄</div>
-      <div class="label">Total facturi</div>
-      <div class="value" style="font-size:1.3rem">${fmtMoney(totalFacturi)}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">✅</div>
-      <div class="label">Total plătit</div>
-      <div class="value" style="font-size:1.3rem;color:var(--rose)">${fmtMoney(totalPlatit)}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">⚠️</div>
-      <div class="label">Restanțe</div>
-      <div class="value" style="font-size:1.3rem;color:#c0392b">${fmtMoney(totalRestant)}</div>
-    </div>
-  `;
+  const STATUS_FCT = {
+    neplatita: { label:'Neplatită',        cls:'badge-red'    },
+    partial:   { label:'Parțial plătită',  cls:'badge-orange' },
+    platita:   { label:'Plătită integral', cls:'badge-green'  }
+  };
 
-  const tbody = document.getElementById('tbody-plati-f');
+  const tbody = document.getElementById('tbody-facturi');
   if (list.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="ico">📄</div><p>Nicio plată înregistrată</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="ico">📄</div><p>Nicio factură găsită</p></div></td></tr>`;
     return;
   }
-  const today = new Date().toISOString().slice(0,10);
-  const metodaLabel = { cash:'Cash', card:'Card', transfer:'Transfer bancar' };
-  tbody.innerHTML = list.map((p, i) => {
-    const stObj   = STATUS_PLATA_F[p.status] || { label:p.status, cls:'badge-gray' };
-    const overdue = p.scadenta && p.scadenta < today && p.status !== 'platit';
-    return `
-    <tr${overdue ? ' style="background:#fff5f5"' : ''}>
+  tbody.innerHTML = list.map((f, i) => {
+    const status  = getStatusFactura(f);
+    const stObj   = STATUS_FCT[status];
+    const ramasa  = getSumaRamasaFactura(f);
+    const alerta  = getAlertaScadenta(f.dataScadenta, status);
+    const rowCls  = alerta === 'overdue' ? ' class="row-overdue"' : alerta === 'soon' ? ' class="row-soon"' : '';
+    const scadTag = alerta === 'overdue'
+      ? `<span class="alert-tag alert-tag-red">Depășită</span>`
+      : alerta === 'soon'
+      ? `<span class="alert-tag alert-tag-orange">În ${Math.ceil((new Date(f.dataScadenta)-new Date())/86400000)}z</span>`
+      : '';
+    return `<tr${rowCls}>
       <td>${i+1}</td>
-      <td><strong>${furnizorName(p.furnizorId)}</strong></td>
-      <td><strong>${fmtMoney(p.suma)}</strong></td>
-      <td>${fmtDate(p.data)}</td>
-      <td>${p.scadenta
-        ? `<span${overdue?' style="color:#c0392b;font-weight:600"':''}>${fmtDate(p.scadenta)}${overdue?' ⚠️':''}</span>`
-        : '—'}</td>
+      <td><strong>${f.numar}</strong></td>
+      <td>${furnizorName(f.furnizorId)}</td>
+      <td>${fmtDate(f.dataEmisa)}</td>
+      <td>${f.dataScadenta ? fmtDate(f.dataScadenta) + scadTag : '—'}</td>
+      <td>${fmtMoney(f.sumaTotala)} <span style="font-size:.75rem;color:var(--gray-4)">${f.moneda}</span></td>
+      <td>${status !== 'platita' ? `<strong style="color:#c0392b">${fmtMoney(ramasa)}</strong>` : '<span style="color:#1e7c45">—</span>'}</td>
       <td>${badge(stObj.label, stObj.cls)}</td>
-      <td>${metodaLabel[p.metoda]||p.metoda||'—'}</td>
-      <td style="font-size:.82rem;color:var(--gray-4)">${p.factura||'—'}</td>
       <td>
-        <button class="btn btn-sm btn-gold" onclick="editPlataF(${p.id})">✏️</button>
-        <button class="btn btn-sm btn-danger" style="margin-left:4px" onclick="deleteItem('plati_furnizori',${p.id})">🗑</button>
+        <button class="btn btn-sm btn-outline" onclick="viewFactura(${f.id})" title="Detalii">👁</button>
+        <button class="btn btn-sm btn-gold"    onclick="editFactura(${f.id})"  title="Editează" style="margin:0 4px">✏️</button>
+        <button class="btn btn-sm btn-danger"  onclick="deleteItem('facturi',${f.id})" title="Șterge">🗑</button>
       </td>
     </tr>`;
   }).join('');
+}
+
+function renderPlatiFacturi() {
+  const q  = (document.getElementById('search-plati-f').value || '').toLowerCase();
+  const md = document.getElementById('filter-plati-f').value;
+  const list = DB.plati_facturi.filter(p => {
+    const fct  = DB.facturi.find(f => f.id === p.facturaId);
+    const fnm  = fct ? furnizorName(fct.furnizorId) : '';
+    const numar = fct ? fct.numar : '';
+    const match = (fnm + ' ' + numar + ' ' + (p.referinta||'')).toLowerCase().includes(q);
+    return match && (!md || p.modalitate === md);
+  }).sort((a, b) => b.dataPlata.localeCompare(a.dataPlata));
+
+  const modLabel = { transfer:'Transfer / OP', cash:'Cash', card:'Card' };
+  const tbody = document.getElementById('tbody-plati-f');
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="ico">💳</div><p>Nicio plată înregistrată</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map((p, i) => {
+    const fct = DB.facturi.find(f => f.id === p.facturaId);
+    return `<tr>
+      <td>${i+1}</td>
+      <td>${fct ? `<strong>${fct.numar}</strong>` : '—'}</td>
+      <td>${fct ? furnizorName(fct.furnizorId) : '—'}</td>
+      <td>${fmtDate(p.dataPlata)}</td>
+      <td><strong>${fmtMoney(p.sumaPlata)}</strong></td>
+      <td>${badge(modLabel[p.modalitate]||p.modalitate,'badge-blue')}</td>
+      <td style="font-size:.82rem;color:var(--gray-4)">${p.referinta||'—'}</td>
+      <td>
+        <button class="btn btn-sm btn-gold"   onclick="editPlataFactura(${p.id})" title="Editează">✏️</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteItem('plati_facturi',${p.id})" style="margin-left:4px" title="Șterge">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function viewFactura(id) {
+  const f = DB.facturi.find(x => x.id === id);
+  if (!f) return;
+  const platiFct = DB.plati_facturi.filter(p => p.facturaId === id).sort((a,b) => a.dataPlata.localeCompare(b.dataPlata));
+  const status   = getStatusFactura(f);
+  const platit   = getSumaPlatiFactura(id);
+  const ramasa   = getSumaRamasaFactura(f);
+  const alerta   = getAlertaScadenta(f.dataScadenta, status);
+  const STATUS_FCT = { neplatita:{label:'Neplatită',cls:'badge-red'}, partial:{label:'Parțial plătită',cls:'badge-orange'}, platita:{label:'Plătită integral',cls:'badge-green'} };
+  const modLabel = { transfer:'Transfer / OP', cash:'Cash', card:'Card' };
+
+  document.getElementById('df-title').textContent = `Factură ${f.numar}`;
+  document.getElementById('df-body').innerHTML = `
+    <div class="factura-header">
+      <div class="fh-row"><span class="fh-label">Furnizor</span><span class="fh-val">${furnizorName(f.furnizorId)}</span></div>
+      <div class="fh-row"><span class="fh-label">Nr. factură</span><span class="fh-val">${f.numar}</span></div>
+      <div class="fh-row"><span class="fh-label">Dată emisă</span><span class="fh-val">${fmtDate(f.dataEmisa)}</span></div>
+      <div class="fh-row"><span class="fh-label">Scadență</span><span class="fh-val">${f.dataScadenta ? fmtDate(f.dataScadenta) : '—'}${alerta==='overdue'?'<span class="alert-tag alert-tag-red" style="margin-left:8px">Depășită</span>':alerta==='soon'?'<span class="alert-tag alert-tag-orange" style="margin-left:8px">Curând</span>':''}</span></div>
+      <div class="fh-row"><span class="fh-label">Sumă totală</span><span class="fh-val">${fmtMoney(f.sumaTotala)} ${f.moneda}</span></div>
+      <div class="fh-row"><span class="fh-label">Status</span><span class="fh-val">${badge(STATUS_FCT[status].label, STATUS_FCT[status].cls)}</span></div>
+      ${f.observatii ? `<div class="fh-row" style="margin-top:6px"><span class="fh-label">Observații</span><span class="fh-val" style="font-weight:400">${f.observatii}</span></div>` : ''}
+    </div>
+    <div class="detail-section">
+      <h4>Plăți efectuate (${platiFct.length})</h4>
+      ${platiFct.length
+        ? `<ul class="plati-list">${platiFct.map(p => `
+            <li>
+              <div class="pl-left">${fmtDate(p.dataPlata)} · ${modLabel[p.modalitate]||p.modalitate}${p.referinta?' · '+p.referinta:''}</div>
+              <div class="pl-right">${fmtMoney(p.sumaPlata)}</div>
+            </li>`).join('')}</ul>`
+        : '<p style="font-size:.85rem;color:var(--gray-4)">Nicio plată înregistrată</p>'}
+    </div>
+    <div class="suma-ramasa-bar">
+      <span class="sr-label">Total plătit: <strong>${fmtMoney(platit)}</strong></span>
+      <span class="sr-val">${status === 'platita' ? '✅ Achitată integral' : `Rămas: ${fmtMoney(ramasa)}`}</span>
+    </div>
+    <div style="margin-top:10px"><div class="progress"><div class="progress-bar" style="width:${f.sumaTotala>0?Math.min(100,platit/f.sumaTotala*100):0}%"></div></div></div>`;
+
+  const btnPlata = document.getElementById('df-btn-plata');
+  if (status === 'platita') {
+    btnPlata.style.display = 'none';
+  } else {
+    btnPlata.style.display = '';
+    btnPlata.onclick = () => { closeModal('detaliu-factura'); openModalPlataForFactura(id); };
+  }
+  document.getElementById('modal-detaliu-factura').classList.add('open');
 }
 
 // ── Modal open/close ──────────────────────────────────────
@@ -1678,19 +1946,30 @@ function openModal(type) {
   if (type === 'furnizor') {
     editId.furnizor = null;
     document.getElementById('modal-furnizor-title').textContent = 'Adaugă furnizor';
-    ['nume','persoana','telefon','email','adresa','note'].forEach(f => document.getElementById('f-'+f).value = '');
+    ['nume','cui','iban','persoana','telefon','email','adresa','note'].forEach(f => document.getElementById('f-'+f).value = '');
     document.getElementById('f-categorie').value = 'rochii';
   }
-  if (type === 'plata-furnizor') {
-    editId['plata-furnizor'] = null;
-    document.getElementById('modal-plata-f-title').textContent = 'Adaugă plată furnizor';
+  if (type === 'factura') {
+    editId.factura = null;
+    document.getElementById('modal-factura-title').textContent = 'Adaugă factură';
     if (DB.furnizori.length === 0) { alert('Adaugă mai întâi un furnizor.'); return; }
-    populateSelect('pf-furnizor', DB.furnizori, f => f.nume);
-    ['suma','factura','note'].forEach(f => document.getElementById('pf-'+f).value = '');
-    document.getElementById('pf-data').value     = new Date().toISOString().slice(0,10);
-    document.getElementById('pf-scadenta').value = '';
-    document.getElementById('pf-status').value   = 'neplatit';
-    document.getElementById('pf-metoda').value   = 'transfer';
+    populateSelect('fct-furnizor', DB.furnizori, f => f.nume);
+    ['numar','suma','obs'].forEach(f => document.getElementById('fct-'+f).value = '');
+    document.getElementById('fct-data-emisa').value = new Date().toISOString().slice(0,10);
+    document.getElementById('fct-scadenta').value   = '';
+    document.getElementById('fct-moneda').value     = 'RON';
+  }
+  if (type === 'plata-factura') {
+    editId['plata-factura'] = null;
+    document.getElementById('modal-plata-fct-title').textContent = 'Înregistrează plată';
+    const deschise = DB.facturi.filter(f => getStatusFactura(f) !== 'platita');
+    if (deschise.length === 0) { alert('Nu există facturi neplatite.'); return; }
+    populateSelect('pfct-factura', deschise, f => `${f.numar} — ${furnizorName(f.furnizorId)} (rămas: ${fmtMoney(getSumaRamasaFactura(f))})`);
+    ['suma','referinta','obs'].forEach(f => document.getElementById('pfct-'+f).value = '');
+    document.getElementById('pfct-data').value       = new Date().toISOString().slice(0,10);
+    document.getElementById('pfct-modalitate').value = 'transfer';
+    document.getElementById('plata-fct-info').innerHTML = '';
+    onSelectFacturaPlata();
   }
   document.getElementById('modal-'+type).classList.add('open');
 }
@@ -1775,6 +2054,8 @@ function editFurnizor(id) {
   editId.furnizor = id;
   document.getElementById('modal-furnizor-title').textContent = 'Editează furnizor';
   document.getElementById('f-nume').value      = f.nume;
+  document.getElementById('f-cui').value       = f.cui||'';
+  document.getElementById('f-iban').value      = f.iban||'';
   document.getElementById('f-persoana').value  = f.persoana||'';
   document.getElementById('f-categorie').value = f.categorie;
   document.getElementById('f-telefon').value   = f.telefon||'';
@@ -1784,21 +2065,67 @@ function editFurnizor(id) {
   document.getElementById('modal-furnizor').classList.add('open');
 }
 
-function editPlataF(id) {
-  const p = DB.plati_furnizori.find(x=>x.id===id);
+function editFactura(id) {
+  const f = DB.facturi.find(x=>x.id===id);
+  if (!f) return;
+  editId.factura = id;
+  document.getElementById('modal-factura-title').textContent = 'Editează factură';
+  populateSelect('fct-furnizor', DB.furnizori, fz => fz.nume);
+  document.getElementById('fct-furnizor').value   = f.furnizorId;
+  document.getElementById('fct-numar').value      = f.numar;
+  document.getElementById('fct-moneda').value     = f.moneda||'RON';
+  document.getElementById('fct-suma').value       = f.sumaTotala;
+  document.getElementById('fct-data-emisa').value = f.dataEmisa;
+  document.getElementById('fct-scadenta').value   = f.dataScadenta||'';
+  document.getElementById('fct-obs').value        = f.observatii||'';
+  document.getElementById('modal-factura').classList.add('open');
+}
+
+function editPlataFactura(id) {
+  const p = DB.plati_facturi.find(x=>x.id===id);
   if (!p) return;
-  editId['plata-furnizor'] = id;
-  document.getElementById('modal-plata-f-title').textContent = 'Editează plată furnizor';
-  populateSelect('pf-furnizor', DB.furnizori, f => f.nume);
-  document.getElementById('pf-furnizor').value = p.furnizorId;
-  document.getElementById('pf-suma').value     = p.suma;
-  document.getElementById('pf-data').value     = p.data;
-  document.getElementById('pf-scadenta').value = p.scadenta||'';
-  document.getElementById('pf-status').value   = p.status;
-  document.getElementById('pf-metoda').value   = p.metoda||'transfer';
-  document.getElementById('pf-factura').value  = p.factura||'';
-  document.getElementById('pf-note').value     = p.note||'';
-  document.getElementById('modal-plata-furnizor').classList.add('open');
+  editId['plata-factura'] = id;
+  document.getElementById('modal-plata-fct-title').textContent = 'Editează plată';
+  const toateFct = DB.facturi;
+  populateSelect('pfct-factura', toateFct, f => `${f.numar} — ${furnizorName(f.furnizorId)}`);
+  document.getElementById('pfct-factura').value    = p.facturaId;
+  document.getElementById('pfct-suma').value       = p.sumaPlata;
+  document.getElementById('pfct-data').value       = p.dataPlata;
+  document.getElementById('pfct-modalitate').value = p.modalitate||'transfer';
+  document.getElementById('pfct-referinta').value  = p.referinta||'';
+  document.getElementById('pfct-obs').value        = p.observatii||'';
+  document.getElementById('plata-fct-info').innerHTML = '';
+  document.getElementById('modal-plata-factura').classList.add('open');
+}
+
+function openModalPlataForFactura(facturaId) {
+  editId['plata-factura'] = null;
+  document.getElementById('modal-plata-fct-title').textContent = 'Înregistrează plată';
+  const deschise = DB.facturi.filter(f => getStatusFactura(f) !== 'platita');
+  if (deschise.length === 0) { alert('Nu există facturi neplatite.'); return; }
+  populateSelect('pfct-factura', deschise, f => `${f.numar} — ${furnizorName(f.furnizorId)} (rămas: ${fmtMoney(getSumaRamasaFactura(f))})`);
+  document.getElementById('pfct-factura').value    = facturaId;
+  document.getElementById('pfct-suma').value       = '';
+  document.getElementById('pfct-data').value       = new Date().toISOString().slice(0,10);
+  document.getElementById('pfct-modalitate').value = 'transfer';
+  document.getElementById('pfct-referinta').value  = '';
+  document.getElementById('pfct-obs').value        = '';
+  onSelectFacturaPlata();
+  document.getElementById('modal-plata-factura').classList.add('open');
+}
+
+function onSelectFacturaPlata() {
+  const sel = document.getElementById('pfct-factura');
+  if (!sel || !sel.value) return;
+  const fct = DB.facturi.find(f => f.id === Number(sel.value));
+  if (!fct) return;
+  const ramasa = getSumaRamasaFactura(fct);
+  document.getElementById('plata-fct-info').innerHTML = `
+    <div style="background:var(--gold-lt);border-radius:8px;padding:10px 14px;font-size:.85rem;margin-bottom:4px">
+      <strong>${fct.numar}</strong> · ${furnizorName(fct.furnizorId)}
+      · Sumă totală: <strong>${fmtMoney(fct.sumaTotala)}</strong>
+      · <span style="color:#c0392b">Rămas de plată: <strong>${fmtMoney(ramasa)}</strong></span>
+    </div>`;
 }
 
 // ── Save handlers ─────────────────────────────────────────
@@ -1897,6 +2224,8 @@ function saveFurnizor() {
   if (!nume) { alert('Numele furnizorului este obligatoriu.'); return; }
   const obj = {
     nume,
+    cui:       document.getElementById('f-cui').value.trim(),
+    iban:      document.getElementById('f-iban').value.trim(),
     persoana:  document.getElementById('f-persoana').value.trim(),
     categorie: document.getElementById('f-categorie').value,
     telefon:   document.getElementById('f-telefon').value.trim(),
@@ -1913,26 +2242,58 @@ function saveFurnizor() {
   save(); closeModal('furnizor'); renderFurnizori();
 }
 
-function savePlataF() {
-  const furnizorId = Number(document.getElementById('pf-furnizor').value);
-  const suma       = document.getElementById('pf-suma').value;
-  const data       = document.getElementById('pf-data').value;
-  if (!furnizorId || !suma || !data) { alert('Câmpurile marcate cu * sunt obligatorii.'); return; }
+function saveFactura() {
+  const furnizorId = Number(document.getElementById('fct-furnizor').value);
+  const numar      = document.getElementById('fct-numar').value.trim();
+  const suma       = document.getElementById('fct-suma').value;
+  const dataEmisa  = document.getElementById('fct-data-emisa').value;
+  if (!furnizorId || !numar || !suma || !dataEmisa) { alert('Câmpurile marcate cu * sunt obligatorii.'); return; }
   const obj = {
-    furnizorId, suma: Number(suma), data,
-    scadenta: document.getElementById('pf-scadenta').value,
-    status:   document.getElementById('pf-status').value,
-    metoda:   document.getElementById('pf-metoda').value,
-    factura:  document.getElementById('pf-factura').value.trim(),
-    note:     document.getElementById('pf-note').value.trim()
+    furnizorId, numar, dataEmisa,
+    dataScadenta: document.getElementById('fct-scadenta').value || null,
+    sumaTotala:   Number(suma),
+    moneda:       document.getElementById('fct-moneda').value,
+    observatii:   document.getElementById('fct-obs').value.trim()
   };
-  if (editId['plata-furnizor']) {
-    Object.assign(DB.plati_furnizori.find(x=>x.id===editId['plata-furnizor']), obj);
+  if (editId.factura) {
+    Object.assign(DB.facturi.find(x=>x.id===editId.factura), obj);
   } else {
-    obj.id = nextId(DB.plati_furnizori);
-    DB.plati_furnizori.push(obj);
+    obj.id = nextId(DB.facturi);
+    DB.facturi.push(obj);
   }
-  save(); closeModal('plata-furnizor'); renderPlatiF();
+  save(); closeModal('factura'); renderFacturi();
+}
+
+function savePlataFactura() {
+  const facturaId = Number(document.getElementById('pfct-factura').value);
+  const suma      = Number(document.getElementById('pfct-suma').value);
+  const data      = document.getElementById('pfct-data').value;
+  if (!facturaId || !suma || !data) { alert('Câmpurile marcate cu * sunt obligatorii.'); return; }
+
+  // Validare: suma nu depășește restul de plată (excepție la editare — excludem plata curentă)
+  const factura = DB.facturi.find(x => x.id === facturaId);
+  const platitFaraAceasta = DB.plati_facturi
+    .filter(p => p.facturaId === facturaId && p.id !== editId['plata-factura'])
+    .reduce((s, p) => s + Number(p.sumaPlata), 0);
+  const ramasDisponibil = Number(factura.sumaTotala) - platitFaraAceasta;
+  if (suma > ramasDisponibil + 0.001) {
+    alert(`Suma depășește restul de plată!\nMăxim permis: ${fmtMoney(ramasDisponibil)}`);
+    return;
+  }
+
+  const obj = {
+    facturaId, sumaPlata: suma, dataPlata: data,
+    modalitate: document.getElementById('pfct-modalitate').value,
+    referinta:  document.getElementById('pfct-referinta').value.trim(),
+    observatii: document.getElementById('pfct-obs').value.trim()
+  };
+  if (editId['plata-factura']) {
+    Object.assign(DB.plati_facturi.find(x=>x.id===editId['plata-factura']), obj);
+  } else {
+    obj.id = nextId(DB.plati_facturi);
+    DB.plati_facturi.push(obj);
+  }
+  save(); closeModal('plata-factura'); renderPlatiFacturi(); renderDashFurnizori();
 }
 
 // ── Delete ────────────────────────────────────────────────
@@ -1943,9 +2304,10 @@ function deleteItem(coll, id) {
   if (coll === 'clienti')   renderClienti();
   if (coll === 'comenzi')   renderComenzi();
   if (coll === 'programari') renderProgramari();
-  if (coll === 'plati')          renderPlati();
-  if (coll === 'furnizori')      renderFurnizori();
-  if (coll === 'plati_furnizori') renderPlatiF();
+  if (coll === 'plati')         renderPlati();
+  if (coll === 'furnizori')     { renderFurnizori(); }
+  if (coll === 'facturi')       { renderFacturi(); renderDashFurnizori(); }
+  if (coll === 'plati_facturi') { renderPlatiFacturi(); renderDashFurnizori(); }
 }
 
 // Close modal on backdrop click
