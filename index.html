@@ -1252,59 +1252,58 @@ let DB = {
 
 let editId = { client: null, comanda: null, programare: null, plata: null, furnizor: null, factura: null, 'plata-factura': null };
 
-// ── Persistence ─────────────────────────────────────────
-function save() { localStorage.setItem('bridal_db', JSON.stringify(DB)); }
-function load() {
-  const d = localStorage.getItem('bridal_db');
-  if (d) {
-    DB = JSON.parse(d);
-    // Migrare: asigură colecțiile noi pentru utilizatorii cu date vechi
-    if (!DB.furnizori)    DB.furnizori = [];
-    if (!DB.facturi)      DB.facturi = [];
-    if (!DB.plati_facturi) DB.plati_facturi = [];
-    // Migrare din schema veche plati_furnizori → ignorăm, colecție nouă
-    delete DB.plati_furnizori;
-  } else {
-    seedData();
+// ── API helper ────────────────────────────────────────────
+const api = {
+  async get(path) {
+    const r = await fetch(path);
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  },
+  async post(path, body) {
+    const r = await fetch(path, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  },
+  async put(path, body) {
+    const r = await fetch(path, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  },
+  async del(path) {
+    const r = await fetch(path, { method:'DELETE' });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
   }
-}
+};
 
-function seedData() {
-  DB.clienti = [
-    { id: 1, prenume:'Ioana', nume:'Popa', telefon:'0721 345 678', email:'ioana.popa@gmail.com', nunta:'2025-09-14', status:'activ', bust:88, talie:68, solduri:94, inaltime:163, note:'Preferă stil romantic, dantelă' },
-    { id: 2, prenume:'Alexandra', nume:'Constantin', telefon:'0742 111 222', email:'alex.c@yahoo.ro', nunta:'2025-07-26', status:'activ', bust:92, talie:72, solduri:98, inaltime:168, note:'Nuntă în grădină, rochie ușoară' },
-    { id: 3, prenume:'Mihaela', nume:'Dumitrescu', telefon:'0756 888 999', email:'', nunta:'2025-06-07', status:'finalizat', bust:86, talie:65, solduri:90, inaltime:160, note:'' }
-  ];
-  DB.comenzi = [
-    { id: 1, clientId:1, model:'Princess A-line', culoare:'Ivory', termen:'2025-08-20', pret:6800, status:'proba', desc:'Trenă 1.5m, dantelă Chantilly pe corsaj' },
-    { id: 2, clientId:2, model:'Boho Chic Flowin', culoare:'Alb', termen:'2025-07-01', pret:4500, status:'gata', desc:'Spate gol, flori 3D aplicate' },
-    { id: 3, clientId:3, model:'Mermaid Classique', culoare:'Champagne', termen:'2025-05-25', pret:5200, status:'livrata', desc:'Sirenă, închidere corset' }
-  ];
-  DB.programari = [
-    { id: 1, clientId:1, data:'2025-04-10', ora:'11:00', tip:'proba', note:'Prima probă' },
-    { id: 2, clientId:2, data:'2025-04-08', ora:'14:30', tip:'modificari', note:'Ajustare talie -2cm' },
-    { id: 3, clientId:1, data:'2025-05-15', ora:'10:00', tip:'proba', note:'A doua probă după modificări' }
-  ];
-  DB.plati = [
-    { id: 1, clientId:1, tip:'avans', suma:2000, data:'2024-12-10', metoda:'cash', note:'Avans 30%' },
-    { id: 2, clientId:2, tip:'avans', suma:1500, data:'2024-11-20', metoda:'card', note:'' },
-    { id: 3, clientId:3, tip:'final', suma:5200, data:'2025-05-24', metoda:'transfer', note:'Achitat integral' }
-  ];
-  DB.furnizori = [
-    { id:1, nume:'Pronovias Romania',  persoana:'Ana Dumitrescu', categorie:'rochii',    telefon:'021 300 100',  email:'ana@pronovias.ro',      adresa:'Calea Victoriei 12, București', cui:'RO12345678',  iban:'RO49AAAA1B31007593840000', note:'Termene 30 zile' },
-    { id:2, nume:'Dantelaria SA',      persoana:'Mihai Pop',      categorie:'materiale', telefon:'0744 200 300', email:'contact@dantelaria.ro',  adresa:'Cluj-Napoca',                  cui:'RO87654321',  iban:'',                         note:'' },
-    { id:3, nume:'Croitorie Eleganta', persoana:'Elena Matei',    categorie:'croitorie', telefon:'0756 400 500', email:'',                       adresa:'Str. Florilor 5, București',   cui:'RO11223344',  iban:'',                         note:'Modificări speciale' }
-  ];
-  DB.facturi = [
-    { id:1, furnizorId:1, numar:'FAC-2025-001', dataEmisa:'2025-01-10', dataScadenta:'2025-02-10', sumaTotala:15000, moneda:'RON', observatii:'Colecție primăvară 2025' },
-    { id:2, furnizorId:2, numar:'FAC-2025-045', dataEmisa:'2026-03-01', dataScadenta:'2026-04-01', sumaTotala:3500,  moneda:'RON', observatii:'' },
-    { id:3, furnizorId:3, numar:'FAC-2025-067', dataEmisa:'2026-03-15', dataScadenta:'2026-03-20', sumaTotala:800,   moneda:'RON', observatii:'Modificări rochii lot 3' }
-  ];
-  DB.plati_facturi = [
-    { id:1, facturaId:1, dataPlata:'2025-02-08', sumaPlata:15000, modalitate:'transfer', referinta:'OP-2025-001', observatii:'Plată integrală' },
-    { id:2, facturaId:3, dataPlata:'2026-03-18', sumaPlata:400,   modalitate:'cash',     referinta:'',            observatii:'Plată parțială' }
-  ];
-  save();
+// ── Load all data from API ────────────────────────────────
+async function loadAll() {
+  try {
+    const [clienti, comenzi, programari, plati, furnizori, facturi, platiFact] = await Promise.all([
+      api.get('/api/clienti'),
+      api.get('/api/comenzi'),
+      api.get('/api/programari'),
+      api.get('/api/plati'),
+      api.get('/api/furnizori'),
+      api.get('/api/facturi'),
+      api.get('/api/plati-facturi')
+    ]);
+    DB.clienti       = clienti;
+    DB.comenzi       = comenzi;
+    DB.programari    = programari;
+    DB.plati         = plati;
+    DB.furnizori     = furnizori;
+    DB.facturi       = facturi;
+    DB.plati_facturi = platiFact;
+    renderDashboard();
+  } catch(e) {
+    console.error('Eroare la încărcare date:', e);
+    document.body.innerHTML = `<div style="padding:40px;text-align:center;font-family:sans-serif">
+      <h2 style="color:#c0392b">⚠️ Eroare conectare bază de date</h2>
+      <p style="color:#666;margin-top:12px">${e.message}</p>
+      <button onclick="location.reload()" style="margin-top:20px;padding:10px 24px;background:#c9768f;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:1rem">Reîncearcă</button>
+    </div>`;
+  }
 }
 
 function nextId(arr) { return arr.length ? Math.max(...arr.map(x=>x.id)) + 1 : 1; }
@@ -2129,185 +2128,169 @@ function onSelectFacturaPlata() {
 }
 
 // ── Save handlers ─────────────────────────────────────────
-function saveClient() {
+async function saveClient() {
   const prenume = document.getElementById('c-prenume').value.trim();
   const nume    = document.getElementById('c-nume').value.trim();
   const telefon = document.getElementById('c-telefon').value.trim();
   if (!prenume || !nume || !telefon) { alert('Câmpurile marcate cu * sunt obligatorii.'); return; }
-
   const obj = {
     prenume, nume, telefon,
-    email:    document.getElementById('c-email').value.trim(),
-    nunta:    document.getElementById('c-nunta').value,
-    status:   document.getElementById('c-status').value,
-    bust:     document.getElementById('c-bust').value,
-    talie:    document.getElementById('c-talie').value,
-    solduri:  document.getElementById('c-solduri').value,
-    inaltime: document.getElementById('c-inaltime').value,
-    note:     document.getElementById('c-note').value.trim()
+    email: document.getElementById('c-email').value.trim(),
+    nunta: document.getElementById('c-nunta').value || null,
+    status: document.getElementById('c-status').value,
+    bust: document.getElementById('c-bust').value || null,
+    talie: document.getElementById('c-talie').value || null,
+    solduri: document.getElementById('c-solduri').value || null,
+    inaltime: document.getElementById('c-inaltime').value || null,
+    note: document.getElementById('c-note').value.trim()
   };
-  if (editId.client) {
-    Object.assign(DB.clienti.find(x=>x.id===editId.client), obj);
-  } else {
-    obj.id = nextId(DB.clienti);
-    DB.clienti.push(obj);
-  }
-  save(); closeModal('client'); renderClienti();
+  try {
+    const saved = editId.client
+      ? await api.put(`/api/clienti/${editId.client}`, obj)
+      : await api.post('/api/clienti', obj);
+    if (editId.client) { const i = DB.clienti.findIndex(x=>x.id===editId.client); DB.clienti[i] = saved; }
+    else DB.clienti.push(saved);
+    closeModal('client'); renderClienti();
+  } catch(e) { alert('Eroare: ' + e.message); }
 }
 
-function saveComanda() {
+async function saveComanda() {
   const clientId = Number(document.getElementById('cmd-client').value);
   const model    = document.getElementById('cmd-model').value.trim();
   const termen   = document.getElementById('cmd-termen').value;
   const pret     = document.getElementById('cmd-pret').value;
   if (!clientId || !model || !termen || !pret) { alert('Câmpurile marcate cu * sunt obligatorii.'); return; }
-
-  const obj = {
-    clientId, model,
-    culoare: document.getElementById('cmd-culoare').value.trim(),
-    termen, pret: Number(pret),
-    status: document.getElementById('cmd-status').value,
-    desc:   document.getElementById('cmd-desc').value.trim()
-  };
-  if (editId.comanda) {
-    Object.assign(DB.comenzi.find(x=>x.id===editId.comanda), obj);
-  } else {
-    obj.id = nextId(DB.comenzi);
-    DB.comenzi.push(obj);
-  }
-  save(); closeModal('comanda'); renderComenzi();
+  const obj = { clientId, model, culoare: document.getElementById('cmd-culoare').value.trim(),
+    termen, pret: Number(pret), status: document.getElementById('cmd-status').value,
+    desc: document.getElementById('cmd-desc').value.trim() };
+  try {
+    const saved = editId.comanda
+      ? await api.put(`/api/comenzi/${editId.comanda}`, obj)
+      : await api.post('/api/comenzi', obj);
+    if (editId.comanda) { const i = DB.comenzi.findIndex(x=>x.id===editId.comanda); DB.comenzi[i] = saved; }
+    else DB.comenzi.push(saved);
+    closeModal('comanda'); renderComenzi();
+  } catch(e) { alert('Eroare: ' + e.message); }
 }
 
-function saveProgramare() {
+async function saveProgramare() {
   const clientId = Number(document.getElementById('prog-client').value);
-  const data     = document.getElementById('prog-data').value;
-  const ora      = document.getElementById('prog-ora').value;
+  const data = document.getElementById('prog-data').value;
+  const ora  = document.getElementById('prog-ora').value;
   if (!clientId || !data || !ora) { alert('Câmpurile marcate cu * sunt obligatorii.'); return; }
-
-  const obj = {
-    clientId, data, ora,
-    tip:  document.getElementById('prog-tip').value,
-    note: document.getElementById('prog-note').value.trim()
-  };
-  if (editId.programare) {
-    Object.assign(DB.programari.find(x=>x.id===editId.programare), obj);
-  } else {
-    obj.id = nextId(DB.programari);
-    DB.programari.push(obj);
-  }
-  save(); closeModal('programare'); renderProgramari();
+  const obj = { clientId, data, ora, tip: document.getElementById('prog-tip').value,
+    note: document.getElementById('prog-note').value.trim() };
+  try {
+    const saved = editId.programare
+      ? await api.put(`/api/programari/${editId.programare}`, obj)
+      : await api.post('/api/programari', obj);
+    if (editId.programare) { const i = DB.programari.findIndex(x=>x.id===editId.programare); DB.programari[i] = saved; }
+    else DB.programari.push(saved);
+    closeModal('programare'); renderProgramari();
+  } catch(e) { alert('Eroare: ' + e.message); }
 }
 
-function savePlata() {
+async function savePlata() {
   const clientId = Number(document.getElementById('pl-client').value);
-  const suma     = document.getElementById('pl-suma').value;
-  const data     = document.getElementById('pl-data').value;
+  const suma = document.getElementById('pl-suma').value;
+  const data = document.getElementById('pl-data').value;
   if (!clientId || !suma || !data) { alert('Câmpurile marcate cu * sunt obligatorii.'); return; }
-
-  const obj = {
-    clientId, suma: Number(suma), data,
-    tip:    document.getElementById('pl-tip').value,
-    metoda: document.getElementById('pl-metoda').value,
-    note:   document.getElementById('pl-note').value.trim()
-  };
-  if (editId.plata) {
-    Object.assign(DB.plati.find(x=>x.id===editId.plata), obj);
-  } else {
-    obj.id = nextId(DB.plati);
-    DB.plati.push(obj);
-  }
-  save(); closeModal('plata'); renderPlati();
+  const obj = { clientId, suma: Number(suma), data, tip: document.getElementById('pl-tip').value,
+    metoda: document.getElementById('pl-metoda').value, note: document.getElementById('pl-note').value.trim() };
+  try {
+    const saved = editId.plata
+      ? await api.put(`/api/plati/${editId.plata}`, obj)
+      : await api.post('/api/plati', obj);
+    if (editId.plata) { const i = DB.plati.findIndex(x=>x.id===editId.plata); DB.plati[i] = saved; }
+    else DB.plati.push(saved);
+    closeModal('plata'); renderPlati();
+  } catch(e) { alert('Eroare: ' + e.message); }
 }
 
-function saveFurnizor() {
+async function saveFurnizor() {
   const nume = document.getElementById('f-nume').value.trim();
   if (!nume) { alert('Numele furnizorului este obligatoriu.'); return; }
-  const obj = {
-    nume,
-    cui:       document.getElementById('f-cui').value.trim(),
-    iban:      document.getElementById('f-iban').value.trim(),
-    persoana:  document.getElementById('f-persoana').value.trim(),
+  const obj = { nume, cui: document.getElementById('f-cui').value.trim(),
+    iban: document.getElementById('f-iban').value.trim(),
+    persoana: document.getElementById('f-persoana').value.trim(),
     categorie: document.getElementById('f-categorie').value,
-    telefon:   document.getElementById('f-telefon').value.trim(),
-    email:     document.getElementById('f-email').value.trim(),
-    adresa:    document.getElementById('f-adresa').value.trim(),
-    note:      document.getElementById('f-note').value.trim()
-  };
-  if (editId.furnizor) {
-    Object.assign(DB.furnizori.find(x=>x.id===editId.furnizor), obj);
-  } else {
-    obj.id = nextId(DB.furnizori);
-    DB.furnizori.push(obj);
-  }
-  save(); closeModal('furnizor'); renderFurnizori();
+    telefon: document.getElementById('f-telefon').value.trim(),
+    email: document.getElementById('f-email').value.trim(),
+    adresa: document.getElementById('f-adresa').value.trim(),
+    note: document.getElementById('f-note').value.trim() };
+  try {
+    const saved = editId.furnizor
+      ? await api.put(`/api/furnizori/${editId.furnizor}`, obj)
+      : await api.post('/api/furnizori', obj);
+    if (editId.furnizor) { const i = DB.furnizori.findIndex(x=>x.id===editId.furnizor); DB.furnizori[i] = saved; }
+    else DB.furnizori.push(saved);
+    closeModal('furnizor'); renderFurnizori();
+  } catch(e) { alert('Eroare: ' + e.message); }
 }
 
-function saveFactura() {
+async function saveFactura() {
   const furnizorId = Number(document.getElementById('fct-furnizor').value);
   const numar      = document.getElementById('fct-numar').value.trim();
   const suma       = document.getElementById('fct-suma').value;
   const dataEmisa  = document.getElementById('fct-data-emisa').value;
   if (!furnizorId || !numar || !suma || !dataEmisa) { alert('Câmpurile marcate cu * sunt obligatorii.'); return; }
-  const obj = {
-    furnizorId, numar, dataEmisa,
+  const obj = { furnizorId, numar, dataEmisa,
     dataScadenta: document.getElementById('fct-scadenta').value || null,
-    sumaTotala:   Number(suma),
-    moneda:       document.getElementById('fct-moneda').value,
-    observatii:   document.getElementById('fct-obs').value.trim()
-  };
-  if (editId.factura) {
-    Object.assign(DB.facturi.find(x=>x.id===editId.factura), obj);
-  } else {
-    obj.id = nextId(DB.facturi);
-    DB.facturi.push(obj);
-  }
-  save(); closeModal('factura'); renderFacturi();
+    sumaTotala: Number(suma), moneda: document.getElementById('fct-moneda').value,
+    observatii: document.getElementById('fct-obs').value.trim() };
+  try {
+    const saved = editId.factura
+      ? await api.put(`/api/facturi/${editId.factura}`, obj)
+      : await api.post('/api/facturi', obj);
+    if (editId.factura) { const i = DB.facturi.findIndex(x=>x.id===editId.factura); DB.facturi[i] = saved; }
+    else DB.facturi.push(saved);
+    closeModal('factura'); renderFacturi(); renderDashFurnizori();
+  } catch(e) { alert('Eroare: ' + e.message); }
 }
 
-function savePlataFactura() {
+async function savePlataFactura() {
   const facturaId = Number(document.getElementById('pfct-factura').value);
   const suma      = Number(document.getElementById('pfct-suma').value);
   const data      = document.getElementById('pfct-data').value;
   if (!facturaId || !suma || !data) { alert('Câmpurile marcate cu * sunt obligatorii.'); return; }
-
-  // Validare: suma nu depășește restul de plată (excepție la editare — excludem plata curentă)
-  const factura = DB.facturi.find(x => x.id === facturaId);
-  const platitFaraAceasta = DB.plati_facturi
-    .filter(p => p.facturaId === facturaId && p.id !== editId['plata-factura'])
-    .reduce((s, p) => s + Number(p.sumaPlata), 0);
-  const ramasDisponibil = Number(factura.sumaTotala) - platitFaraAceasta;
-  if (suma > ramasDisponibil + 0.001) {
-    alert(`Suma depășește restul de plată!\nMăxim permis: ${fmtMoney(ramasDisponibil)}`);
-    return;
-  }
-
-  const obj = {
-    facturaId, sumaPlata: suma, dataPlata: data,
+  const obj = { facturaId, sumaPlata: suma, dataPlata: data,
     modalitate: document.getElementById('pfct-modalitate').value,
-    referinta:  document.getElementById('pfct-referinta').value.trim(),
-    observatii: document.getElementById('pfct-obs').value.trim()
-  };
-  if (editId['plata-factura']) {
-    Object.assign(DB.plati_facturi.find(x=>x.id===editId['plata-factura']), obj);
-  } else {
-    obj.id = nextId(DB.plati_facturi);
-    DB.plati_facturi.push(obj);
-  }
-  save(); closeModal('plata-factura'); renderPlatiFacturi(); renderDashFurnizori();
+    referinta: document.getElementById('pfct-referinta').value.trim(),
+    observatii: document.getElementById('pfct-obs').value.trim() };
+  try {
+    const saved = editId['plata-factura']
+      ? await api.put(`/api/plati-facturi/${editId['plata-factura']}`, obj)
+      : await api.post('/api/plati-facturi', obj);
+    if (editId['plata-factura']) { const i = DB.plati_facturi.findIndex(x=>x.id===editId['plata-factura']); DB.plati_facturi[i] = saved; }
+    else DB.plati_facturi.push(saved);
+    // Reîncarcă factura pentru status actualizat
+    const fctUp = await api.get(`/api/facturi`);
+    DB.facturi = fctUp;
+    closeModal('plata-factura'); renderPlatiFacturi(); renderDashFurnizori();
+  } catch(e) { alert('Eroare: ' + e.message); }
 }
 
 // ── Delete ────────────────────────────────────────────────
-function deleteItem(coll, id) {
+const COLL_PATH = { clienti:'clienti', comenzi:'comenzi', programari:'programari',
+  plati:'plati', furnizori:'furnizori', facturi:'facturi', plati_facturi:'plati-facturi' };
+
+async function deleteItem(coll, id) {
   if (!confirm('Sigur ștergi această înregistrare?')) return;
-  DB[coll] = DB[coll].filter(x => x.id !== id);
-  save();
-  if (coll === 'clienti')   renderClienti();
-  if (coll === 'comenzi')   renderComenzi();
-  if (coll === 'programari') renderProgramari();
-  if (coll === 'plati')         renderPlati();
-  if (coll === 'furnizori')     { renderFurnizori(); }
-  if (coll === 'facturi')       { renderFacturi(); renderDashFurnizori(); }
-  if (coll === 'plati_facturi') { renderPlatiFacturi(); renderDashFurnizori(); }
+  try {
+    await api.del(`/api/${COLL_PATH[coll]}/${id}`);
+    DB[coll] = DB[coll].filter(x => x.id !== id);
+    if (coll === 'clienti')      renderClienti();
+    if (coll === 'comenzi')      renderComenzi();
+    if (coll === 'programari')   renderProgramari();
+    if (coll === 'plati')        renderPlati();
+    if (coll === 'furnizori')    renderFurnizori();
+    if (coll === 'facturi')      { renderFacturi(); renderDashFurnizori(); }
+    if (coll === 'plati_facturi') {
+      const fctUp = await api.get('/api/facturi');
+      DB.facturi = fctUp;
+      renderPlatiFacturi(); renderDashFurnizori();
+    }
+  } catch(e) { alert('Eroare la ștergere: ' + e.message); }
 }
 
 // Close modal on backdrop click
@@ -2316,8 +2299,7 @@ document.querySelectorAll('.modal-bg').forEach(bg => {
 });
 
 // ── Init ──────────────────────────────────────────────────
-load();
-renderDashboard();
+loadAll();
 </script>
 </body>
 </html>
