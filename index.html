@@ -1719,8 +1719,22 @@ function switchFurnizoriTab(tab, el) {
 
 function renderDashFurnizori() {
   const today = new Date().toISOString().slice(0, 10);
-  const neplatite   = DB.facturi.filter(f => getStatusFactura(f) !== 'platita');
-  const totalRestant = neplatite.reduce((s, f) => s + getSumaRamasaFactura(f), 0);
+  const neplatite = DB.facturi.filter(f => getStatusFactura(f) !== 'platita');
+
+  // Group remaining amounts by currency
+  const restantPerMoneda = {};
+  neplatite.forEach(f => {
+    const moneda = f.moneda || 'RON';
+    const suma   = getSumaRamasaFactura(f);
+    if (suma > 0) restantPerMoneda[moneda] = (restantPerMoneda[moneda] || 0) + suma;
+  });
+  const monede = Object.keys(restantPerMoneda).sort();
+  const restantHTML = monede.length === 0
+    ? `<div class="value" style="color:#1e7c45">—</div>`
+    : monede.map(m =>
+        `<div style="font-size:1.1rem;font-weight:700;color:#c0392b;line-height:1.4">${fmtMoneyC(restantPerMoneda[m], m)}</div>`
+      ).join('');
+
   const scadenteAzi = DB.facturi.filter(f => {
     const a = getAlertaScadenta(f.dataScadenta, getStatusFactura(f));
     return a === 'overdue';
@@ -1740,7 +1754,7 @@ function renderDashFurnizori() {
     <div class="stat-card">
       <div class="stat-icon">💸</div>
       <div class="label">Total restant</div>
-      <div class="value" style="font-size:1.3rem;color:#c0392b">${fmtMoney(totalRestant)}</div>
+      <div style="margin-top:6px">${restantHTML}</div>
     </div>
     <div class="stat-card">
       <div class="stat-icon">⚠️</div>
