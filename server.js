@@ -5,9 +5,13 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+if (!process.env.DATABASE_URL) {
+  console.error('❌ DATABASE_URL environment variable is not set!');
+}
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
 });
 
 app.use(express.json());
@@ -17,7 +21,11 @@ app.use(express.static(path.join(__dirname)));
 const q = (text, params) => pool.query(text, params);
 const d = v => v ? (v instanceof Date ? v.toISOString().slice(0,10) : String(v).slice(0,10)) : null;
 const ok = (res, data) => res.json(data);
-const err = (res, e) => { console.error(e.message); res.status(500).json({ error: e.message }); };
+const err = (res, e) => {
+  const msg = e.message || (process.env.DATABASE_URL ? 'Database error' : 'DATABASE_URL not configured');
+  console.error('API Error:', msg);
+  res.status(500).json({ error: msg });
+};
 
 // ── CLIENTI ───────────────────────────────────────────────
 const mapClient = r => ({
