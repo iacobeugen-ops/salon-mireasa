@@ -1132,9 +1132,11 @@
         <div class="form-group">
           <label>Monedă</label>
           <select id="fct-moneda">
-            <option value="RON">RON</option>
-            <option value="EUR">EUR</option>
-            <option value="USD">USD</option>
+            <option value="RON">RON – Leu românesc</option>
+            <option value="EUR">EUR – Euro</option>
+            <option value="USD">USD – Dolar american</option>
+            <option value="GBP">GBP – Liră sterlină</option>
+            <option value="CHF">CHF – Franc elvețian</option>
           </select>
         </div>
         <div class="form-group">
@@ -1336,6 +1338,17 @@ function fmtDate(d) {
 }
 function fmtMoney(n) {
   return Number(n).toLocaleString('ro-RO') + ' RON';
+}
+function fmtMoneyC(n, currency) {
+  const c = currency || 'RON';
+  try {
+    return Number(n).toLocaleString('ro-RO', {
+      style: 'currency', currency: c,
+      minimumFractionDigits: 2, maximumFractionDigits: 2
+    });
+  } catch(e) {
+    return Number(n).toLocaleString('ro-RO') + ' ' + c;
+  }
 }
 
 const CAT_FURNIZOR = {
@@ -1815,8 +1828,8 @@ function renderFacturi() {
       <td>${furnizorName(f.furnizorId)}</td>
       <td>${fmtDate(f.dataEmisa)}</td>
       <td>${f.dataScadenta ? fmtDate(f.dataScadenta) + scadTag : '—'}</td>
-      <td>${fmtMoney(f.sumaTotala)} <span style="font-size:.75rem;color:var(--gray-4)">${f.moneda}</span></td>
-      <td>${status !== 'platita' ? `<strong style="color:#c0392b">${fmtMoney(ramasa)}</strong>` : '<span style="color:#1e7c45">—</span>'}</td>
+      <td>${fmtMoneyC(f.sumaTotala, f.moneda)}</td>
+      <td>${status !== 'platita' ? `<strong style="color:#c0392b">${fmtMoneyC(ramasa, f.moneda)}</strong>` : '<span style="color:#1e7c45">—</span>'}</td>
       <td>${badge(stObj.label, stObj.cls)}</td>
       <td>
         <button class="btn btn-sm btn-outline" onclick="viewFactura(${f.id})" title="Detalii">👁</button>
@@ -1851,7 +1864,7 @@ function renderPlatiFacturi() {
       <td>${fct ? `<strong>${fct.numar}</strong>` : '—'}</td>
       <td>${fct ? furnizorName(fct.furnizorId) : '—'}</td>
       <td>${fmtDate(p.dataPlata)}</td>
-      <td><strong>${fmtMoney(p.sumaPlata)}</strong></td>
+      <td><strong>${fmtMoneyC(p.sumaPlata, fct ? fct.moneda : 'RON')}</strong></td>
       <td>${badge(modLabel[p.modalitate]||p.modalitate,'badge-blue')}</td>
       <td style="font-size:.82rem;color:var(--gray-4)">${p.referinta||'—'}</td>
       <td>
@@ -1880,7 +1893,7 @@ function viewFactura(id) {
       <div class="fh-row"><span class="fh-label">Nr. factură</span><span class="fh-val">${f.numar}</span></div>
       <div class="fh-row"><span class="fh-label">Dată emisă</span><span class="fh-val">${fmtDate(f.dataEmisa)}</span></div>
       <div class="fh-row"><span class="fh-label">Scadență</span><span class="fh-val">${f.dataScadenta ? fmtDate(f.dataScadenta) : '—'}${alerta==='overdue'?'<span class="alert-tag alert-tag-red" style="margin-left:8px">Depășită</span>':alerta==='soon'?'<span class="alert-tag alert-tag-orange" style="margin-left:8px">Curând</span>':''}</span></div>
-      <div class="fh-row"><span class="fh-label">Sumă totală</span><span class="fh-val">${fmtMoney(f.sumaTotala)} ${f.moneda}</span></div>
+      <div class="fh-row"><span class="fh-label">Sumă totală</span><span class="fh-val">${fmtMoneyC(f.sumaTotala, f.moneda)}</span></div>
       <div class="fh-row"><span class="fh-label">Status</span><span class="fh-val">${badge(STATUS_FCT[status].label, STATUS_FCT[status].cls)}</span></div>
       ${f.observatii ? `<div class="fh-row" style="margin-top:6px"><span class="fh-label">Observații</span><span class="fh-val" style="font-weight:400">${f.observatii}</span></div>` : ''}
     </div>
@@ -1890,13 +1903,13 @@ function viewFactura(id) {
         ? `<ul class="plati-list">${platiFct.map(p => `
             <li>
               <div class="pl-left">${fmtDate(p.dataPlata)} · ${modLabel[p.modalitate]||p.modalitate}${p.referinta?' · '+p.referinta:''}</div>
-              <div class="pl-right">${fmtMoney(p.sumaPlata)}</div>
+              <div class="pl-right">${fmtMoneyC(p.sumaPlata, f.moneda)}</div>
             </li>`).join('')}</ul>`
         : '<p style="font-size:.85rem;color:var(--gray-4)">Nicio plată înregistrată</p>'}
     </div>
     <div class="suma-ramasa-bar">
-      <span class="sr-label">Total plătit: <strong>${fmtMoney(platit)}</strong></span>
-      <span class="sr-val">${status === 'platita' ? '✅ Achitată integral' : `Rămas: ${fmtMoney(ramasa)}`}</span>
+      <span class="sr-label">Total plătit: <strong>${fmtMoneyC(platit, f.moneda)}</strong></span>
+      <span class="sr-val">${status === 'platita' ? '✅ Achitată integral' : `Rămas: ${fmtMoneyC(ramasa, f.moneda)}`}</span>
     </div>
     <div style="margin-top:10px"><div class="progress"><div class="progress-bar" style="width:${f.sumaTotala>0?Math.min(100,platit/f.sumaTotala*100):0}%"></div></div></div>`;
 
@@ -1963,7 +1976,7 @@ function openModal(type) {
     document.getElementById('modal-plata-fct-title').textContent = 'Înregistrează plată';
     const deschise = DB.facturi.filter(f => getStatusFactura(f) !== 'platita');
     if (deschise.length === 0) { alert('Nu există facturi neplatite.'); return; }
-    populateSelect('pfct-factura', deschise, f => `${f.numar} — ${furnizorName(f.furnizorId)} (rămas: ${fmtMoney(getSumaRamasaFactura(f))})`);
+    populateSelect('pfct-factura', deschise, f => `${f.numar} — ${furnizorName(f.furnizorId)} (rămas: ${fmtMoneyC(getSumaRamasaFactura(f), f.moneda)})`);
     ['suma','referinta','obs'].forEach(f => document.getElementById('pfct-'+f).value = '');
     document.getElementById('pfct-data').value       = new Date().toISOString().slice(0,10);
     document.getElementById('pfct-modalitate').value = 'transfer';
@@ -2102,7 +2115,7 @@ function openModalPlataForFactura(facturaId) {
   document.getElementById('modal-plata-fct-title').textContent = 'Înregistrează plată';
   const deschise = DB.facturi.filter(f => getStatusFactura(f) !== 'platita');
   if (deschise.length === 0) { alert('Nu există facturi neplatite.'); return; }
-  populateSelect('pfct-factura', deschise, f => `${f.numar} — ${furnizorName(f.furnizorId)} (rămas: ${fmtMoney(getSumaRamasaFactura(f))})`);
+  populateSelect('pfct-factura', deschise, f => `${f.numar} — ${furnizorName(f.furnizorId)} (rămas: ${fmtMoneyC(getSumaRamasaFactura(f), f.moneda)})`);
   document.getElementById('pfct-factura').value    = facturaId;
   document.getElementById('pfct-suma').value       = '';
   document.getElementById('pfct-data').value       = new Date().toISOString().slice(0,10);
