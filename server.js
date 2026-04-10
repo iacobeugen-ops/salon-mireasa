@@ -273,8 +273,7 @@ app.patch('/api/facturi/:id/marfa-sosita', async (req, res) => {
   const { marfaSosita } = req.body;
   try {
     await q('UPDATE facturi SET marfa_sosita=$1 WHERE id=$2', [!!marfaSosita, req.params.id]);
-    const { rows } = await q('SELECT * FROM facturi_cu_status WHERE id=$1',[req.params.id]);
-    ok(res, mapFactura(rows[0]));
+    res.json({ ok: true, marfaSosita: !!marfaSosita });
   } catch (e) { err(res, e); }
 });
 

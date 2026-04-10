@@ -2315,15 +2315,14 @@ async function savePlataFactura() {
 
 // ── Marfă sosită toggle ───────────────────────────────────
 async function toggleMarfaSosita(id, dinModal) {
-  const f = DB.facturi.find(x => x.id === id);
-  if (!f) return;
-  const nou = !f.marfaSosita;
+  const idx = DB.facturi.findIndex(x => x.id === id);
+  if (idx === -1) return;
+  const nou = !DB.facturi[idx].marfaSosita;
   try {
-    const updated = await api.patch(`/api/facturi/${id}/marfa-sosita`, { marfaSosita: nou });
-    const idx = DB.facturi.findIndex(x => x.id === id);
-    if (idx !== -1) DB.facturi[idx] = updated;
+    await api.patch(`/api/facturi/${id}/marfa-sosita`, { marfaSosita: nou });
+    DB.facturi[idx].marfaSosita = nou; // actualizare directă în cache
     renderFacturi();
-    if (dinModal) viewFactura(id); // reîncarcă modalul dacă e deschis
+    if (dinModal) viewFactura(id);
   } catch(e) {
     alert('Eroare la actualizare: ' + e.message);
   }
