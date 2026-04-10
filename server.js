@@ -238,9 +238,36 @@ const mapFactura = r => ({
   marfaSosita:r.marfa_sosita||false
 });
 
+// Query inline — nu depinde de view
+const facturaQ = (where) => `
+  SELECT f.id, f.furnizor_id, fz.nume AS furnizor_nume,
+    f.numar, f.data_emisa, f.data_scadenta,
+    f.suma_totala, f.moneda, f.observatii, f.marfa_sosita,
+    COALESCE(SUM(pf.suma_plata),0) AS suma_platita,
+    f.suma_totala - COALESCE(SUM(pf.suma_plata),0) AS suma_ramasa,
+    CASE
+      WHEN COALESCE(SUM(pf.suma_plata),0) >= f.suma_totala THEN 'platita'
+      WHEN COALESCE(SUM(pf.suma_plata),0) > 0             THEN 'partial'
+      ELSE 'neplatita'
+    END AS status,
+    CASE
+      WHEN COALESCE(SUM(pf.suma_plata),0) >= f.suma_totala THEN NULL
+      WHEN f.data_scadenta IS NULL                          THEN NULL
+      WHEN f.data_scadenta < CURRENT_DATE                   THEN 'overdue'
+      WHEN f.data_scadenta <= CURRENT_DATE + INTERVAL '7 days' THEN 'soon'
+      ELSE NULL
+    END AS alerta_scadenta
+  FROM facturi f
+  LEFT JOIN furnizori fz ON fz.id = f.furnizor_id
+  LEFT JOIN plati_facturi pf ON pf.factura_id = f.id
+  ${where || ''}
+  GROUP BY f.id, fz.nume`;
+
 app.get('/api/facturi', async (req, res) => {
-  try { const { rows } = await q('SELECT * FROM facturi_cu_status ORDER BY data_emisa DESC'); ok(res, rows.map(mapFactura)); }
-  catch (e) { err(res, e); }
+  try {
+    const { rows } = await q(facturaQ() + ' ORDER BY f.data_emisa DESC');
+    ok(res, rows.map(mapFactura));
+  } catch (e) { err(res, e); }
 });
 
 app.post('/api/facturi', async (req, res) => {
@@ -251,7 +278,7 @@ app.post('/api/facturi', async (req, res) => {
        VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
       [furnizorId,numar,dataEmisa,dataScadenta||null,sumaTotala,moneda||'RON',observatii||null]
     );
-    const { rows } = await q('SELECT * FROM facturi_cu_status WHERE id=$1',[ins[0].id]);
+    const { rows } = await q(facturaQ('WHERE f.id=$1'), [ins[0].id]);
     ok(res, mapFactura(rows[0]));
   } catch (e) { err(res, e); }
 });
@@ -264,7 +291,7 @@ app.put('/api/facturi/:id', async (req, res) => {
        suma_totala=$5,moneda=$6,observatii=$7 WHERE id=$8`,
       [furnizorId,numar,dataEmisa,dataScadenta||null,sumaTotala,moneda||'RON',observatii||null,req.params.id]
     );
-    const { rows } = await q('SELECT * FROM facturi_cu_status WHERE id=$1',[req.params.id]);
+    const { rows } = await q(facturaQ('WHERE f.id=$1'), [req.params.id]);
     ok(res, mapFactura(rows[0]));
   } catch (e) { err(res, e); }
 });
