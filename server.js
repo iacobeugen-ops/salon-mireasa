@@ -234,7 +234,8 @@ const mapFactura = r => ({
   numar:r.numar, dataEmisa:d(r.data_emisa), dataScadenta:d(r.data_scadenta),
   sumaTotala:Number(r.suma_totala), moneda:r.moneda||'RON', observatii:r.observatii||'',
   sumaPlatita:Number(r.suma_platita||0), sumaRamasa:Number(r.suma_ramasa||0),
-  status:r.status||'neplatita', alertaScadenta:r.alerta_scadenta||null
+  status:r.status||'neplatita', alertaScadenta:r.alerta_scadenta||null,
+  marfaSosita:r.marfa_sosita||false
 });
 
 app.get('/api/facturi', async (req, res) => {
@@ -263,6 +264,15 @@ app.put('/api/facturi/:id', async (req, res) => {
        suma_totala=$5,moneda=$6,observatii=$7 WHERE id=$8`,
       [furnizorId,numar,dataEmisa,dataScadenta||null,sumaTotala,moneda||'RON',observatii||null,req.params.id]
     );
+    const { rows } = await q('SELECT * FROM facturi_cu_status WHERE id=$1',[req.params.id]);
+    ok(res, mapFactura(rows[0]));
+  } catch (e) { err(res, e); }
+});
+
+app.patch('/api/facturi/:id/marfa-sosita', async (req, res) => {
+  const { marfaSosita } = req.body;
+  try {
+    await q('UPDATE facturi SET marfa_sosita=$1 WHERE id=$2', [!!marfaSosita, req.params.id]);
     const { rows } = await q('SELECT * FROM facturi_cu_status WHERE id=$1',[req.params.id]);
     ok(res, mapFactura(rows[0]));
   } catch (e) { err(res, e); }

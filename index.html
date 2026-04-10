@@ -798,7 +798,7 @@
                   <th>#</th><th>Nr. Factură</th><th>Furnizor</th>
                   <th>Data emiterii</th><th>Scadență</th>
                   <th>Sumă totală</th><th>Rămas de plată</th>
-                  <th>Status</th><th>Acțiuni</th>
+                  <th>Status</th><th style="text-align:center">Marfă</th><th>Acțiuni</th>
                 </tr></thead>
                 <tbody id="tbody-facturi"></tbody>
               </table>
@@ -1268,6 +1268,11 @@ const api = {
   },
   async put(path, body) {
     const r = await fetch(path, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  },
+  async patch(path, body) {
+    const r = await fetch(path, { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
     if (!r.ok) throw new Error(await r.text());
     return r.json();
   },
@@ -1822,7 +1827,7 @@ function renderFacturi() {
 
   const tbody = document.getElementById('tbody-facturi');
   if (list.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="ico">📄</div><p>Nicio factură găsită</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="ico">📄</div><p>Nicio factură găsită</p></div></td></tr>`;
     return;
   }
   tbody.innerHTML = list.map((f, i) => {
@@ -1836,6 +1841,9 @@ function renderFacturi() {
       : alerta === 'soon'
       ? `<span class="alert-tag alert-tag-orange">În ${Math.ceil((new Date(f.dataScadenta)-new Date())/86400000)}z</span>`
       : '';
+    const marfaBtn = f.marfaSosita
+      ? `<button class="btn btn-sm" style="background:#1e7c45;color:#fff;min-width:80px" onclick="toggleMarfaSosita(${f.id})" title="Marfă sosită — apasă pentru a anula">✅ Sosită</button>`
+      : `<button class="btn btn-sm btn-outline" style="min-width:80px" onclick="toggleMarfaSosita(${f.id})" title="Marchează marfa ca sosită">📦 Așteptare</button>`;
     return `<tr${rowCls}>
       <td>${i+1}</td>
       <td><strong>${f.numar}</strong></td>
@@ -1845,6 +1853,7 @@ function renderFacturi() {
       <td>${fmtMoneyC(f.sumaTotala, f.moneda)}</td>
       <td>${status !== 'platita' ? `<strong style="color:#c0392b">${fmtMoneyC(ramasa, f.moneda)}</strong>` : '<span style="color:#1e7c45">—</span>'}</td>
       <td>${badge(stObj.label, stObj.cls)}</td>
+      <td style="text-align:center">${marfaBtn}</td>
       <td>
         <button class="btn btn-sm btn-outline" onclick="viewFactura(${f.id})" title="Detalii">👁</button>
         <button class="btn btn-sm btn-gold"    onclick="editFactura(${f.id})"  title="Editează" style="margin:0 4px">✏️</button>
@@ -1908,7 +1917,14 @@ function viewFactura(id) {
       <div class="fh-row"><span class="fh-label">Dată emisă</span><span class="fh-val">${fmtDate(f.dataEmisa)}</span></div>
       <div class="fh-row"><span class="fh-label">Scadență</span><span class="fh-val">${f.dataScadenta ? fmtDate(f.dataScadenta) : '—'}${alerta==='overdue'?'<span class="alert-tag alert-tag-red" style="margin-left:8px">Depășită</span>':alerta==='soon'?'<span class="alert-tag alert-tag-orange" style="margin-left:8px">Curând</span>':''}</span></div>
       <div class="fh-row"><span class="fh-label">Sumă totală</span><span class="fh-val">${fmtMoneyC(f.sumaTotala, f.moneda)}</span></div>
-      <div class="fh-row"><span class="fh-label">Status</span><span class="fh-val">${badge(STATUS_FCT[status].label, STATUS_FCT[status].cls)}</span></div>
+      <div class="fh-row"><span class="fh-label">Status plată</span><span class="fh-val">${badge(STATUS_FCT[status].label, STATUS_FCT[status].cls)}</span></div>
+      <div class="fh-row"><span class="fh-label">Marfă</span><span class="fh-val">
+        ${f.marfaSosita
+          ? `<span style="color:#1e7c45;font-weight:600">✅ Marfă sosită</span>
+             <button class="btn btn-sm btn-outline" style="margin-left:10px;font-size:.75rem" onclick="toggleMarfaSosita(${f.id},true)">Anulează</button>`
+          : `<span style="color:#c05500;font-weight:600">📦 Așteptare marfă</span>
+             <button class="btn btn-sm" style="margin-left:10px;font-size:.75rem;background:#1e7c45;color:#fff" onclick="toggleMarfaSosita(${f.id},true)">Marchează sosită</button>`}
+      </span></div>
       ${f.observatii ? `<div class="fh-row" style="margin-top:6px"><span class="fh-label">Observații</span><span class="fh-val" style="font-weight:400">${f.observatii}</span></div>` : ''}
     </div>
     <div class="detail-section">
@@ -2295,6 +2311,22 @@ async function savePlataFactura() {
     DB.facturi = fctUp;
     closeModal('plata-factura'); renderPlatiFacturi(); renderDashFurnizori();
   } catch(e) { alert('Eroare: ' + e.message); }
+}
+
+// ── Marfă sosită toggle ───────────────────────────────────
+async function toggleMarfaSosita(id, dinModal) {
+  const f = DB.facturi.find(x => x.id === id);
+  if (!f) return;
+  const nou = !f.marfaSosita;
+  try {
+    const updated = await api.patch(`/api/facturi/${id}/marfa-sosita`, { marfaSosita: nou });
+    const idx = DB.facturi.findIndex(x => x.id === id);
+    if (idx !== -1) DB.facturi[idx] = updated;
+    renderFacturi();
+    if (dinModal) viewFactura(id); // reîncarcă modalul dacă e deschis
+  } catch(e) {
+    alert('Eroare la actualizare: ' + e.message);
+  }
 }
 
 // ── Delete ────────────────────────────────────────────────
