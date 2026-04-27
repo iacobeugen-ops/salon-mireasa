@@ -174,6 +174,13 @@
       color: var(--gray-4);
       white-space: nowrap;
     }
+    th.sortable {
+      cursor: pointer;
+      user-select: none;
+    }
+    th.sortable:hover { background: var(--gray-3); color: var(--text); }
+    th.sortable.sort-active { color: var(--rose); }
+    .sort-icon { font-style: normal; margin-left: 3px; }
     td { padding: 11px 14px; border-bottom: 1px solid var(--gray-2); vertical-align: middle; }
     tr:last-child td { border-bottom: none; }
     tr:hover td { background: var(--gray-1); }
@@ -796,8 +803,10 @@
               <table>
                 <thead><tr>
                   <th>#</th><th>Nr. Factură</th><th>Furnizor</th>
-                  <th>Data emiterii</th><th>Scadență</th>
-                  <th>Sumă totală</th><th>Rămas de plată</th>
+                  <th class="sortable" onclick="setSortFacturi('dataEmisa')">Data emiterii<span class="sort-icon" id="si-fct-dataEmisa"></span></th>
+                  <th class="sortable" onclick="setSortFacturi('dataScadenta')">Scadență<span class="sort-icon" id="si-fct-dataScadenta"></span></th>
+                  <th class="sortable" onclick="setSortFacturi('sumaTotala')">Sumă totală<span class="sort-icon" id="si-fct-sumaTotala"></span></th>
+                  <th class="sortable" onclick="setSortFacturi('ramasaDePlata')">Rămas de plată<span class="sort-icon" id="si-fct-ramasaDePlata"></span></th>
                   <th>Status</th><th style="text-align:center">Marfă</th><th>Acțiuni</th>
                 </tr></thead>
                 <tbody id="tbody-facturi"></tbody>
@@ -824,7 +833,8 @@
               <table>
                 <thead><tr>
                   <th>#</th><th>Factură</th><th>Furnizor</th>
-                  <th>Data plății</th><th>Sumă plătită</th>
+                  <th class="sortable" onclick="setSortPlatiF('dataPlata')">Data plății<span class="sort-icon" id="si-pf-dataPlata"></span></th>
+                  <th class="sortable" onclick="setSortPlatiF('sumaPlata')">Sumă plătită<span class="sort-icon" id="si-pf-sumaPlata"></span></th>
                   <th>Modalitate</th><th>Referință OP</th><th>Acțiuni</th>
                 </tr></thead>
                 <tbody id="tbody-plati-f"></tbody>
@@ -1253,6 +1263,46 @@ let DB = {
 };
 
 let editId = { client: null, comanda: null, programare: null, plata: null, furnizor: null, factura: null, 'plata-factura': null };
+
+let sortFacturi = { col: 'dataEmisa',  dir: 'desc' };
+let sortPlatiF  = { col: 'dataPlata',  dir: 'desc' };
+
+function setSortFacturi(col) {
+  if (sortFacturi.col === col) sortFacturi.dir = sortFacturi.dir === 'asc' ? 'desc' : 'asc';
+  else { sortFacturi.col = col; sortFacturi.dir = 'asc'; }
+  renderFacturi();
+}
+function setSortPlatiF(col) {
+  if (sortPlatiF.col === col) sortPlatiF.dir = sortPlatiF.dir === 'asc' ? 'desc' : 'asc';
+  else { sortPlatiF.col = col; sortPlatiF.dir = 'asc'; }
+  renderPlatiFacturi();
+}
+function applySortIndicators(prefix, state, cols) {
+  cols.forEach(col => {
+    const el = document.getElementById(`${prefix}-${col}`);
+    const th = el && el.closest('th');
+    if (!el) return;
+    if (state.col === col) {
+      el.textContent = state.dir === 'asc' ? ' ▲' : ' ▼';
+      th && th.classList.add('sort-active');
+    } else {
+      el.textContent = '';
+      th && th.classList.remove('sort-active');
+    }
+  });
+}
+function getSortValFactura(f, col) {
+  if (col === 'dataEmisa')     return f.dataEmisa || '';
+  if (col === 'dataScadenta')  return f.dataScadenta || '';
+  if (col === 'sumaTotala')    return Number(f.sumaTotala) || 0;
+  if (col === 'ramasaDePlata') return getSumaRamasaFactura(f);
+  return '';
+}
+function getSortValPlataF(p, col) {
+  if (col === 'dataPlata') return p.dataPlata || '';
+  if (col === 'sumaPlata') return Number(p.sumaPlata) || 0;
+  return '';
+}
 
 // ── API helper ────────────────────────────────────────────
 const api = {
@@ -1813,11 +1863,18 @@ function renderFacturi() {
   renderDashFurnizori();
   const q  = (document.getElementById('search-facturi').value || '').toLowerCase();
   const st = document.getElementById('filter-facturi').value;
+  const FCT_SORT_COLS = ['dataEmisa','dataScadenta','sumaTotala','ramasaDePlata'];
+  applySortIndicators('si-fct', sortFacturi, FCT_SORT_COLS);
   const list = DB.facturi.filter(f => {
     const status = getStatusFactura(f);
     const match  = (f.numar + ' ' + furnizorName(f.furnizorId)).toLowerCase().includes(q);
     return match && (!st || status === st);
-  }).sort((a, b) => b.dataEmisa.localeCompare(a.dataEmisa));
+  }).sort((a, b) => {
+    const va = getSortValFactura(a, sortFacturi.col);
+    const vb = getSortValFactura(b, sortFacturi.col);
+    const cmp = va < vb ? -1 : va > vb ? 1 : 0;
+    return sortFacturi.dir === 'desc' ? -cmp : cmp;
+  });
 
   const STATUS_FCT = {
     neplatita: { label:'Neplatită',        cls:'badge-red'    },
@@ -1866,13 +1923,20 @@ function renderFacturi() {
 function renderPlatiFacturi() {
   const q  = (document.getElementById('search-plati-f').value || '').toLowerCase();
   const md = document.getElementById('filter-plati-f').value;
+  const PF_SORT_COLS = ['dataPlata','sumaPlata'];
+  applySortIndicators('si-pf', sortPlatiF, PF_SORT_COLS);
   const list = DB.plati_facturi.filter(p => {
     const fct  = DB.facturi.find(f => f.id === p.facturaId);
     const fnm  = fct ? furnizorName(fct.furnizorId) : '';
     const numar = fct ? fct.numar : '';
     const match = (fnm + ' ' + numar + ' ' + (p.referinta||'')).toLowerCase().includes(q);
     return match && (!md || p.modalitate === md);
-  }).sort((a, b) => b.dataPlata.localeCompare(a.dataPlata));
+  }).sort((a, b) => {
+    const va = getSortValPlataF(a, sortPlatiF.col);
+    const vb = getSortValPlataF(b, sortPlatiF.col);
+    const cmp = va < vb ? -1 : va > vb ? 1 : 0;
+    return sortPlatiF.dir === 'desc' ? -cmp : cmp;
+  });
 
   const modLabel = { transfer:'Transfer / OP', cash:'Cash', card:'Card' };
   const tbody = document.getElementById('tbody-plati-f');
