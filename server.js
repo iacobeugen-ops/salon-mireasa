@@ -228,6 +228,27 @@ app.delete('/api/furnizori/:id', async (req, res) => {
   catch (e) { err(res, e); }
 });
 
+// ── TIPURI PRODUSE ────────────────────────────────────────
+const mapTipProdus = r => ({ id: r.id, denumire: r.denumire });
+
+app.get('/api/tipuri-produse', async (req, res) => {
+  try { const { rows } = await q('SELECT * FROM tipuri_produse ORDER BY id'); ok(res, rows.map(mapTipProdus)); }
+  catch (e) { err(res, e); }
+});
+
+app.post('/api/tipuri-produse', async (req, res) => {
+  const { denumire } = req.body;
+  if (!denumire || !denumire.trim()) return res.status(400).json({ error: 'Denumirea este obligatorie.' });
+  try {
+    const { rows } = await q(
+      `INSERT INTO tipuri_produse (denumire) VALUES ($1)
+       ON CONFLICT (denumire) DO UPDATE SET denumire=EXCLUDED.denumire RETURNING *`,
+      [denumire.trim()]
+    );
+    ok(res, mapTipProdus(rows[0]));
+  } catch (e) { err(res, e); }
+});
+
 // ── FACTURI ───────────────────────────────────────────────
 const mapFactura = r => ({
   id:r.id, furnizorId:r.furnizor_id, furnizorNume:r.furnizor_nume||'',
@@ -235,7 +256,9 @@ const mapFactura = r => ({
   sumaTotala:Number(r.suma_totala), moneda:r.moneda||'RON', observatii:r.observatii||'',
   sumaPlatita:Number(r.suma_platita||0), sumaRamasa:Number(r.suma_ramasa||0),
   status:r.status||'neplatita', alertaScadenta:r.alerta_scadenta||null,
-  marfaSosita:r.marfa_sosita||false
+  marfaSosita:r.marfa_sosita||false,
+  tipProdusId:r.tip_produs_id||null, tipProdusDenumire:r.tip_produs_denumire||'',
+  nrProduse:r.nr_produse||null
 });
 
 // Query inline — nu depinde de view
@@ -243,6 +266,7 @@ const facturaQ = (where) => `
   SELECT f.id, f.furnizor_id, fz.nume AS furnizor_nume,
     f.numar, f.data_emisa, f.data_scadenta,
     f.suma_totala, f.moneda, f.observatii, f.marfa_sosita,
+    f.tip_produs_id, tp.denumire AS tip_produs_denumire, f.nr_produse,
     COALESCE(SUM(pf.suma_plata),0) AS suma_platita,
     f.suma_totala - COALESCE(SUM(pf.suma_plata),0) AS suma_ramasa,
     CASE
@@ -260,8 +284,9 @@ const facturaQ = (where) => `
   FROM facturi f
   LEFT JOIN furnizori fz ON fz.id = f.furnizor_id
   LEFT JOIN plati_facturi pf ON pf.factura_id = f.id
+  LEFT JOIN tipuri_produse tp ON tp.id = f.tip_produs_id
   ${where || ''}
-  GROUP BY f.id, fz.nume`;
+  GROUP BY f.id, fz.nume, tp.denumire`;
 
 app.get('/api/facturi', async (req, res) => {
   try {
@@ -271,12 +296,12 @@ app.get('/api/facturi', async (req, res) => {
 });
 
 app.post('/api/facturi', async (req, res) => {
-  const { furnizorId, numar, dataEmisa, dataScadenta, sumaTotala, moneda, observatii } = req.body;
+  const { furnizorId, numar, dataEmisa, dataScadenta, sumaTotala, moneda, observatii, tipProdusId, nrProduse } = req.body;
   try {
     const { rows: ins } = await q(
-      `INSERT INTO facturi (furnizor_id,numar,data_emisa,data_scadenta,suma_totala,moneda,observatii)
-       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
-      [furnizorId,numar,dataEmisa,dataScadenta||null,sumaTotala,moneda||'RON',observatii||null]
+      `INSERT INTO facturi (furnizor_id,numar,data_emisa,data_scadenta,suma_totala,moneda,observatii,tip_produs_id,nr_produse)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
+      [furnizorId,numar,dataEmisa,dataScadenta||null,sumaTotala,moneda||'RON',observatii||null,tipProdusId||null,nrProduse||null]
     );
     const { rows } = await q(facturaQ('WHERE f.id=$1'), [ins[0].id]);
     ok(res, mapFactura(rows[0]));
@@ -284,12 +309,12 @@ app.post('/api/facturi', async (req, res) => {
 });
 
 app.put('/api/facturi/:id', async (req, res) => {
-  const { furnizorId, numar, dataEmisa, dataScadenta, sumaTotala, moneda, observatii } = req.body;
+  const { furnizorId, numar, dataEmisa, dataScadenta, sumaTotala, moneda, observatii, tipProdusId, nrProduse } = req.body;
   try {
     await q(
       `UPDATE facturi SET furnizor_id=$1,numar=$2,data_emisa=$3,data_scadenta=$4,
-       suma_totala=$5,moneda=$6,observatii=$7 WHERE id=$8`,
-      [furnizorId,numar,dataEmisa,dataScadenta||null,sumaTotala,moneda||'RON',observatii||null,req.params.id]
+       suma_totala=$5,moneda=$6,observatii=$7,tip_produs_id=$8,nr_produse=$9 WHERE id=$10`,
+      [furnizorId,numar,dataEmisa,dataScadenta||null,sumaTotala,moneda||'RON',observatii||null,tipProdusId||null,nrProduse||null,req.params.id]
     );
     const { rows } = await q(facturaQ('WHERE f.id=$1'), [req.params.id]);
     ok(res, mapFactura(rows[0]));
