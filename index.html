@@ -807,7 +807,7 @@
                   <th class="sortable" onclick="setSortFacturi('dataScadenta')">Scadență<span class="sort-icon" id="si-fct-dataScadenta"></span></th>
                   <th class="sortable" onclick="setSortFacturi('sumaTotala')">Sumă totală<span class="sort-icon" id="si-fct-sumaTotala"></span></th>
                   <th class="sortable" onclick="setSortFacturi('ramasaDePlata')">Rămas de plată<span class="sort-icon" id="si-fct-ramasaDePlata"></span></th>
-                  <th>Status</th><th style="text-align:center">Marfă</th><th>Acțiuni</th>
+                  <th>Status</th><th style="text-align:center">Marfă</th><th>Produse</th><th>Acțiuni</th>
                 </tr></thead>
                 <tbody id="tbody-facturi"></tbody>
               </table>
@@ -1932,7 +1932,7 @@ function renderFacturi() {
 
   const tbody = document.getElementById('tbody-facturi');
   if (list.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="ico">📄</div><p>Nicio factură găsită</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><div class="ico">📄</div><p>Nicio factură găsită</p></div></td></tr>`;
     return;
   }
   tbody.innerHTML = list.map((f, i) => {
@@ -1959,6 +1959,7 @@ function renderFacturi() {
       <td>${status !== 'platita' ? `<strong style="color:#c0392b">${fmtMoneyC(ramasa, f.moneda)}</strong>` : '<span style="color:#1e7c45">—</span>'}</td>
       <td>${badge(stObj.label, stObj.cls)}</td>
       <td style="text-align:center">${marfaBtn}</td>
+      <td style="font-size:.82rem">${f.nrProduse ? '<strong>' + f.nrProduse + '</strong> × ' : ''}${f.tipProdusDenumire || '—'}</td>
       <td>
         <button class="btn btn-sm btn-outline" onclick="viewFactura(${f.id})" title="Detalii">👁</button>
         <button class="btn btn-sm btn-gold"    onclick="editFactura(${f.id})"  title="Editează" style="margin:0 4px">✏️</button>
