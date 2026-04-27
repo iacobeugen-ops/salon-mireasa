@@ -1281,7 +1281,7 @@ let DB = {
 
 let editId = { client: null, comanda: null, programare: null, plata: null, furnizor: null, factura: null, 'plata-factura': null };
 
-let sortFacturi = { col: 'dataEmisa',  dir: 'desc' };
+let sortFacturi = { col: 'dataScadenta', dir: 'asc' };
 let sortPlatiF  = { col: 'dataPlata',  dir: 'desc' };
 
 function setSortFacturi(col) {
@@ -1310,7 +1310,7 @@ function applySortIndicators(prefix, state, cols) {
 }
 function getSortValFactura(f, col) {
   if (col === 'dataEmisa')     return f.dataEmisa || '';
-  if (col === 'dataScadenta')  return f.dataScadenta || '';
+  if (col === 'dataScadenta')  return f.dataScadenta || '9999-12-31';
   if (col === 'sumaTotala')    return Number(f.sumaTotala) || 0;
   if (col === 'ramasaDePlata') return getSumaRamasaFactura(f);
   return '';
@@ -2037,7 +2037,7 @@ function viewFactura(id) {
           : `<span style="color:#c05500;font-weight:600">📦 Așteptare marfă</span>
              <button class="btn btn-sm" style="margin-left:10px;font-size:.75rem;background:#1e7c45;color:#fff" onclick="toggleMarfaSosita(${f.id},true)">Marchează sosită</button>`}
       </span></div>
-      ${(f.tipProdusDenumire || f.nrProduse) ? `<div class="fh-row"><span class="fh-label">Produse</span><span class="fh-val">${f.nrProduse ? `<strong>${f.nrProduse}</strong> × ` : ''}${f.tipProdusDenumire || '—'}</span></div>` : ''}
+      <div class="fh-row"><span class="fh-label">Produse</span><span class="fh-val">${f.nrProduse ? '<strong>' + f.nrProduse + '</strong> × ' : ''}${f.tipProdusDenumire || '—'}</span></div>
       ${f.observatii ? `<div class="fh-row" style="margin-top:6px"><span class="fh-label">Observații</span><span class="fh-val" style="font-weight:400">${f.observatii}</span></div>` : ''}
     </div>
     <div class="detail-section">
