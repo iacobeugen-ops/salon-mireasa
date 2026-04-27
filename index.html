@@ -2020,8 +2020,12 @@ function viewFactura(id) {
   const alerta   = getAlertaScadenta(f.dataScadenta, status);
   const STATUS_FCT = { neplatita:{label:'Neplatită',cls:'badge-red'}, partial:{label:'Parțial plătită',cls:'badge-orange'}, platita:{label:'Plătită integral',cls:'badge-green'} };
   const modLabel = { transfer:'Transfer / OP', cash:'Cash', card:'Card' };
+  const produseHtml = (f.nrProduse ? '<strong>' + f.nrProduse + '</strong> &times; ' : '') + (f.tipProdusDenumire || '—');
+  const marfaHtml = f.marfaSosita
+    ? '<span style="color:#1e7c45;font-weight:600">✅ Marfă sosită</span><button class="btn btn-sm btn-outline" style="margin-left:10px;font-size:.75rem" onclick="toggleMarfaSosita(' + f.id + ',true)">Anulează</button>'
+    : '<span style="color:#c05500;font-weight:600">📦 Așteptare marfă</span><button class="btn btn-sm" style="margin-left:10px;font-size:.75rem;background:#1e7c45;color:#fff" onclick="toggleMarfaSosita(' + f.id + ',true)">Marchează sosită</button>';
 
-  document.getElementById('df-title').textContent = `Factură ${f.numar}`;
+  document.getElementById('df-title').textContent = 'Factură ' + f.numar;
   document.getElementById('df-body').innerHTML = `
     <div class="factura-header">
       <div class="fh-row"><span class="fh-label">Furnizor</span><span class="fh-val">${furnizorName(f.furnizorId)}</span></div>
@@ -2030,14 +2034,8 @@ function viewFactura(id) {
       <div class="fh-row"><span class="fh-label">Scadență</span><span class="fh-val">${f.dataScadenta ? fmtDate(f.dataScadenta) : '—'}${alerta==='overdue'?'<span class="alert-tag alert-tag-red" style="margin-left:8px">Depășită</span>':alerta==='soon'?'<span class="alert-tag alert-tag-orange" style="margin-left:8px">Curând</span>':''}</span></div>
       <div class="fh-row"><span class="fh-label">Sumă totală</span><span class="fh-val">${fmtMoneyC(f.sumaTotala, f.moneda)}</span></div>
       <div class="fh-row"><span class="fh-label">Status plată</span><span class="fh-val">${badge(STATUS_FCT[status].label, STATUS_FCT[status].cls)}</span></div>
-      <div class="fh-row"><span class="fh-label">Marfă</span><span class="fh-val">
-        ${f.marfaSosita
-          ? `<span style="color:#1e7c45;font-weight:600">✅ Marfă sosită</span>
-             <button class="btn btn-sm btn-outline" style="margin-left:10px;font-size:.75rem" onclick="toggleMarfaSosita(${f.id},true)">Anulează</button>`
-          : `<span style="color:#c05500;font-weight:600">📦 Așteptare marfă</span>
-             <button class="btn btn-sm" style="margin-left:10px;font-size:.75rem;background:#1e7c45;color:#fff" onclick="toggleMarfaSosita(${f.id},true)">Marchează sosită</button>`}
-      </span></div>
-      <div class="fh-row"><span class="fh-label">Produse</span><span class="fh-val">${f.nrProduse ? '<strong>' + f.nrProduse + '</strong> × ' : ''}${f.tipProdusDenumire || '—'}</span></div>
+      <div class="fh-row"><span class="fh-label">Marfă</span><span class="fh-val">${marfaHtml}</span></div>
+      <div class="fh-row"><span class="fh-label">Produse</span><span class="fh-val">${produseHtml}</span></div>
       ${f.observatii ? `<div class="fh-row" style="margin-top:6px"><span class="fh-label">Observații</span><span class="fh-val" style="font-weight:400">${f.observatii}</span></div>` : ''}
     </div>
     <div class="detail-section">
