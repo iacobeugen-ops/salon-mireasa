@@ -2026,7 +2026,6 @@ function viewFactura(id) {
     : '<span style="color:#c05500;font-weight:600">📦 Așteptare marfă</span><button class="btn btn-sm" style="margin-left:10px;font-size:.75rem;background:#1e7c45;color:#fff" onclick="toggleMarfaSosita(' + f.id + ',true)">Marchează sosită</button>';
 
   document.getElementById('df-title').textContent = 'Factură ' + f.numar;
-  try {
   document.getElementById('df-body').innerHTML = `
     <div class="factura-header">
       <div class="fh-row"><span class="fh-label">Furnizor</span><span class="fh-val">${furnizorName(f.furnizorId)}</span></div>
@@ -2054,11 +2053,6 @@ function viewFactura(id) {
       <span class="sr-val">${status === 'platita' ? '✅ Achitată integral' : `Rămas: ${fmtMoneyC(ramasa, f.moneda)}`}</span>
     </div>
     <div style="margin-top:10px"><div class="progress"><div class="progress-bar" style="width:${f.sumaTotala>0?Math.min(100,platit/f.sumaTotala*100):0}%"></div></div></div>`;
-  } catch(e) {
-    document.getElementById('df-body').innerHTML = '<p style="color:red;padding:16px">Eroare randare: ' + e.message + '</p>';
-    console.error('viewFactura error:', e);
-  }
-
   const btnPlata = document.getElementById('df-btn-plata');
   if (status === 'platita') {
     btnPlata.style.display = 'none';
